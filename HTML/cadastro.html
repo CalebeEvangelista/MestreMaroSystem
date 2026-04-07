@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadastro - Esquenta do Povo</title>
+  <link rel="icon" href="/IMAGENS/favicon.png" type="image/png" />
+  <link rel="stylesheet" href="/CSS/cadastro.css" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+    integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+</head>
+<body>
+  <main class="cadastro-page">
+    <section class="cadastro-wrapper">
+      <div class="cadastro-left">
+        <img
+          src="/IMAGENS/logo mestre maro.png"
+          alt="Logo Mestre Maro"
+          class="cadastro-brand-logo"
+        />
+
+        <span class="cadastro-badge">Criação de acesso</span>
+
+        <h1>Cadastre sua conta e prepare sua operação para crescer</h1>
+
+        <p class="cadastro-description">
+          Crie seu acesso para começar a organizar vendas, estoque, clientes, relatórios
+          e toda a gestão da sua loja em um sistema moderno, rápido e prático.
+        </p>
+
+        <div class="cadastro-features">
+          <div class="feature-pill">
+            <i class="fa-solid fa-store"></i>
+            <span>Ideal para lojas</span>
+          </div>
+
+          <div class="feature-pill">
+            <i class="fa-solid fa-boxes-stacked"></i>
+            <span>Estoque integrado</span>
+          </div>
+
+          <div class="feature-pill">
+            <i class="fa-solid fa-cash-register"></i>
+            <span>PDV rápido</span>
+          </div>
+
+          <div class="feature-pill">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Gestão inteligente</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="cadastro-card">
+        <div class="cadastro-card-top">
+          <img
+            src="/IMAGENS/logo mestre maro.png"
+            alt="Logo Mestre Maro"
+            class="cadastro-card-logo"
+          />
+          <span class="card-tag">Cadastro visual</span>
+        </div>
+
+        <div class="cadastro-title">
+          <h2>Crie sua conta</h2>
+          <p>Preencha os dados abaixo para cadastrar sua loja no sistema.</p>
+        </div>
+
+        <form class="cadastro-form">
+          <div class="form-group">
+            <label for="nome">Seu nome</label>
+            <div class="input-wrap">
+              <i class="fa-regular fa-user"></i>
+              <input type="text" id="nome" placeholder="Digite seu nome" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="loja">Nome da loja</label>
+            <div class="input-wrap">
+              <i class="fa-solid fa-shop"></i>
+              <input type="text" id="loja" placeholder="Digite o nome da loja" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email">E-mail</label>
+            <div class="input-wrap">
+              <i class="fa-regular fa-envelope"></i>
+              <input type="email" id="email" placeholder="Digite seu e-mail" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="senha">Senha</label>
+            <div class="input-wrap">
+              <i class="fa-solid fa-lock"></i>
+              <input type="password" id="senha" placeholder="Sua senha" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="repetirSenha">Repetir senha</label>
+            <div class="input-wrap">
+              <i class="fa-solid fa-lock"></i>
+              <input type="password" id="repetirSenha" placeholder="Digite sua senha novamente" />
+            </div>
+          </div>
+
+          <button type="button" class="cadastro-button" onclick="validarCadastro()">Cadastrar agora</button>
+        </form>
+
+        <div class="cadastro-footer-info">
+          <span><i class="fa-solid fa-shield-halved"></i> Estrutura pronta para integração</span>
+          <span><i class="fa-solid fa-bolt"></i> Visual moderno e limpo</span>
+        </div>
+
+        <div class="cadastro-links">
+          <p>Já tem conta? Fazer login</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-storage-compat.js"></script>
+<script src="/JS/firebase-init.js"></script>
+<script src="/JS/cadastro.js"></script>
+</html>

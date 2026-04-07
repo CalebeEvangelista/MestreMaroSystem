@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MESTRE MARO - PDV</title>
+    <link rel="icon" href="/IMAGENS/favicon.png" type="image/png">
+    <link rel="stylesheet" href="/CSS/home.CSS">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+</head>
+<body>
+    <header>    
+        <img src="/IMAGENS/logo mestre maro.png">
+        <div class="itemCategoria" id="visao" onclick="openScreen('visao')">
+            <i class="fa-solid fa-eye"></i>
+            <p>Visão Geral</p>
+        </div>
+        <div class="itemCategoria" id="pdv" onclick="openScreen('pdv')">
+            <i class="fa-solid fa-cash-register"></i>
+            <p>PDV</p>
+        </div>
+        <div class="itemCategoria" id="compras" onclick="openScreen('compras')">
+            <i class="fa-solid fa-cart-arrow-down"></i>
+            <p>Compras</p>
+        </div>
+        <div class="itemCategoria" id="produtos" onclick="openScreen('produtos')">
+            <i class="fa-solid fa-dolly"></i>
+            <p>Produtos</p>
+        </div>
+        <div class="itemCategoria" id="clientes" onclick="openScreen('clientes')">
+            <i class="fa-solid fa-user"></i>
+            <p>Clientes</p>
+        </div>
+        <div class="itemCategoria" id="financeiro" onclick="openScreen('financeiro')">
+            <i class="fa-brands fa-cash-app"></i>
+            <p>Financeiro</p>
+        </div>
+        <div class="itemCategoria" id="lojas" onclick="openScreen('lojas')">
+            <i class="fa-solid fa-store"></i>
+            <p>Minha loja</p>
+        </div>
+        <div class="infosUser" onclick="logout()">
+            <div>
+                <p>Sair</p>
+            </div>
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        </div>
+        <div class="selecaoLoja" onclick="selecaoLoja()">
+            <button>Loja</button>
+        </div>
+    </header>
+    <main>
+
+        <section class="selecionarLoja" id="selecionarLoja">
+            <h1>SELECIONE A LOJA QUE DESEJA TRABALHAR</h1>
+            <hr>
+            <div class="lojasSelecao" id="lojasSelecao"></div>
+            <button onclick="adicionarLoja()">NOVA LOJA</button>
+        </section>
+
+        <section class="visao">
+            <h1>VISÃO GERAL</h1>
+            <section id="visaoCima">
+                <div class="balancoDia">
+                    <h1>HOJE</h1>
+                    <hr>
+                    <h4>
+                        Meta de hoje: <strong id="metaDia"></strong><i class="fa-solid fa-pen-to-square" onclick="alterarMeta('dia')"></i>
+                    </h4>
+                    <div class="metaProgress">
+                        <div class="progress-bar" id="progressDia" style="width: 0%; transition: all 1s ease-in-out;">
+                            <p id="progressToday"></p>
+                        </div>
+                    </div>
+                    <h4>
+                        Valor vendido: <strong id="vendasDia"></strong>
+                    </h4>
+                    <h4>
+                        Quantidade de vendas: <strong id="qtdVendasDia"></strong>
+                    </h4>
+                    <h4>
+                        Ticket médio: <strong id="ticketDia"></strong>
+                    </h4>
+                </div>
+
+                <div class="balancoMes">
+                    <h1 id="mesDoAno">-</h1>
+                    <hr>
+                    <h4>
+                        Meta do mês: <strong id="metaMes"></strong><i class="fa-solid fa-pen-to-square" onclick="alterarMeta('mes')"></i>
+                    </h4>
+                    <div class="metaProgress">
+                        <div class="progress-bar" id="progressMes" style="width: 0%; transition: all 1s ease-in-out;">
+                            <p id="progressMonth"></p>
+                        </div>
+                    </div>
+                    <h4>
+                        Valor vendido: <strong id="vendasMes"></strong>
+                    </h4>
+                    <h4>
+                        Quantidade de vendas: <strong id="qtdVendasMes"></strong>
+                    </h4>
+                    <h4>
+                        Ticket médio: <strong id="ticketMes"></strong>
+                    </h4>
+                </div>
+
+                <div class="visaoDia">
+                    <h1>RESUMO DO DIA</h1>
+                    <hr>
+                    <h4>
+                        Venda mais alta: <strong id="ticketMes">R$82,50</strong>
+                    </h4>
+                    <h4>
+                        Item mais vendido: <strong id="ticketMes">Itaipava Latão</strong>
+                    </h4>
+                    <h4>
+                        Cliente TOP #1: <strong id="ticketMes"> Calebe Evangelista</strong>
+                    </h4>
+                </div>
+            </section>
+
+            <section id="visaoBaixo">
+                <div class="estoqueBaixo" id="estoqueBaixo">
+                    <h1>ITENS COM ESTOQUE BAIXO:</h1>
+                    <hr>
+                    <section class="labelEstoqueBaixo" id="labelEstoqueBaixo"></div>
+                </div>
+                <div class="ultimasVendas" id="ultimasVendas">
+                    
+                    <h1>ULTIMAS VENDAS:</h1>
+                    <hr>
+                    </div>
+                </div>
+            </section>
+            
+        </section>
+
+        <section class="pdv" >
+            <div class="productContainer">
+                <input type="text" id="produto" placeholder="Produto" autocomplete="off" autofocus class="inputProduct">
+                <div id="sugestoes" class="sugestoes"></div>
+            </div>
+            <div class="tableContainer">
+                <table class="tabela-pdv">
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Quantidade</th>
+                            <th>Valor Unidade</th>
+                            <th>Valor Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaProdutos"></tbody>
+                </table>
+            </div>
+            
+            <div class="somas">
+                <div class="campo">
+                    <span class="prefixo">un</span>
+                    <input type="number" id="quantidade">
+                    
+                </div>
+            
+                <div class="campo">
+                    <span class="prefixo">R$</span>
+                    <input type="text" id="valorVendido" >
+                </div>
+            
+                <div class="campo">
+                    <span class="prefixo">R$</span>
+                    <input type="text" id="totalItem" readonly>
+                </div>
+                <div class="campo" id="ValorTotalDaVenda">
+                    <!--<span class="prefixo">R$</span>-->
+                    <div class="somasTotais">
+                        <span class="prefixo" id="prefixoPercent">R$</span>
+                        <input type="text" id="totalVendaAVista" readonly>
+                        <span class="prefixo" id="prefixoAVista">R$</span>
+                        <input type="text" id="totalVenda" readonly>
+                    </div>
+                </div>
+                <button id="addItem" onclick="addToShoppingList()"><i class="fa-solid fa-up-long"></i></button>
+                <button id="cancelarVenda" onclick="limparPDV()"><i class="fa-solid fa-xmark"></i></button>
+                <button id="finalizarVenda" onclick="abrirPagamento()"><i class="fa-solid fa-right-long"></i></button>
+            </div>
+        </section>
+
+        <section class="compras">
+            <h1>Compras</h1>
+            <table>
+                    <thead>
+                        <tr class="cabecalho">
+                            <td>Data</td>
+                            <td>Fornecedor</td>
+                            <td>Valor total</td>
+                            <td>Vencimento</td>
+                            <td>Status</td>
+                        </tr>
+                    </thead>
+                    <tbody id="ultimasCompras"></tbody>
+
+                    <i class="fa-solid fa-cart-plus" onclick="abrirSwalCompra()"></i>
+                </table>
+
+                <template id="template-compra">
+                    <div class="swal-venda">
+                        <div class="swal-venda-topo">
+                        
+                            <div class="swal-venda-box">
+                                <h3>Fornecedor</h3>
+                                <label class="swal2-label">
+                                    <input type="text" class="input-swal" placeholder="Nome" id="nomeFornecedor">
+                                    <input type="text" class="input-swal" placeholder="CNPJ" id="cnpjFornecedor">
+                                    <button class="swal-button" onclick="cadastrarFornecedor()"><i class="fa-solid fa-plus"></i></button>
+                                </label>
+                            </div>
+
+                            <div class="swal-venda-box">
+                                <h3>Pagamento</h3>
+                                <label class="swal2-label">
+                                    <input type="text" class="input-swal " placeholder="Valor" id="valorPago">
+                                    <input type="date" class="input-swal" placeholder="Vencimento" id="vencimentoCompra">
+                                </label>
+                            </div>
+
+
+                            <div class="swal-venda-tabela-box">
+                                <h3>Produtos</h3>
+                                
+                                <label class="swal2-label">
+                                    <input type="text" class="input-swal" placeholder="Produto" id="nomeProdutoPedido" list="listaProdutosPedido"> 
+                                    <datalist id="listaProdutosPedido"></datalist>
+
+                                    <input type="number" class="input-swal swal-valores" placeholder="Qtd" id="quantidadePedido"> 
+                                    <input type="number" class="input-swal swal-valores" placeholder="Compra" id="valorCompraPedido"> 
+                                    <input type="number" class="input-swal swal-valores" placeholder="Venda" id="valorVendaPedido"> 
+                                    <input type="number" class="input-swal swal-valores" placeholder="Atacado" id="valorAtacadoPedido"> 
+                                    <button id="incluirProdutoVenda" onclick="addListaPedido()" class="swal-button" ><i class="fa-solid fa-arrow-down"></i></button>
+                                </label>
+                                
+
+                                <table class="swal-venda-tabela">
+                                    <thead>
+                                    <tr>
+                                        <th>Produto</th>
+                                        <th>Qtd</th>
+                                        <th>Compra</th>
+                                        <th>Total</th>
+                                        <th></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="swal-venda-tabela-compra"></tbody>
+                                </table>
+                            </div>
+
+                        </div>
+                        <label class="swal2-label">
+                            <h3>Desconto:</h3>
+                            <input type="text" class="input-swal swal-valores" placeholder="R$ 0,00" id="valorDesconto">
+                            <h3>Frete:</h3>
+                            <input type="text" class="input-swal swal-valores" placeholder="R$ 0,00" id="valorFrete">
+                            <h3>Total da compra:</h3>
+                            <input type="text" class="input-swal swal-valores" placeholder="R$ 0,00" readonly id="totalCompra">
+                        </label>
+                    </div>
+                </template>
+        </section>
+
+        <section class="pagamento">
+            <div class="telaPagamento">
+                <h1>Pagamento</h1>
+                <div class="espacoCliente">
+                    <input type="text" placeholder="Cliente" id="nomeCliente" list="listaClientes">
+
+                    <datalist id="listaClientes"></datalist>
+
+                    <i class="fa-solid fa-circle-plus" onclick="abrirTelaCadastro()"></i>
+                </div>
+                <div class="cadastroCliente" id="cadastroCliente">
+                    <div class="inputsCliente">
+                        <i class="fa-solid fa-xmark" onclick="fecharTelaCadastro()"></i>
+                        <h4>NOVO CLIENTE</h4>
+                        <hr>
+                        <input type="text" id="nomeClienteCadastro" placeholder="Nome">
+                        <input type="date" id="dataNascimentoCliente" placeholder="Data Nacimento">
+                        <input type="text" id="instagramCliente" placeholder="Instagram">
+                        <input type="text" id="telefoneCliente" placeholder="Telefone">
+                        <button onclick="cadastrarCliente()">Cadastrar</button>
+                    </div>
+                </div>
+
+                <div class="acrescimosDescontos">
+                    <table id="acrescimosDescontos">
+                        <tbody>
+                            <tr>
+                                <td>Desconto</td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        data-tipo="DESCONTO$"
+                                        placeholder="R$ 0,00"
+                                    >
+                                </td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        data-tipo="DESCONTO%"
+                                        placeholder="0,00 %"
+                                    >
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Acrescimo</td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        data-tipo="ACRECIMO$"
+                                        placeholder="R$ 0,00"
+                                    >
+                                </td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        data-tipo="ACRECIMO%"
+                                        placeholder="0,00 %"
+                                    >
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="meiosPagamento">
+                    <table id="meiosPagamento">
+                        <thead>
+                            <th>Forma de pagamento</th>
+                            <th>Valor</th>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>DINHEIRO</td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        class="valorPagamento"
+                                        data-tipo="DINHEIRO"
+                                        placeholder="R$ 0,00"
+                                    >
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>PIX</td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        class="valorPagamento"
+                                        data-tipo="PIX"
+                                        placeholder="R$ 0,00"
+                                    >
+                                    <button class="generatePix" onclick="pix()">
+                                        <i class="fa-solid fa-arrows-rotate"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>DÉBITO</td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        class="valorPagamento"
+                                        data-tipo="DEBITO"
+                                        placeholder="R$ 0,00"
+                                    >
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CRÉDITO</td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        class="valorPagamento"
+                                        data-tipo="CREDITO"
+                                        placeholder="R$ 0,00"
+                                    >
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>IFOOD</td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        class="valorPagamento"
+                                        data-tipo="IFOOD"
+                                        placeholder="R$ 0,00"
+                                    >
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="cashback">
+                    <table id="cashback">
+                        <tbody>
+                            <tr>
+                                <td>CASHBACK DISPONÍVEL</td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        data-tipo="cashback"
+                                        placeholder="R$ 0,00"
+                                        id="cashbackDisponivel"
+                                        readonly
+                                    >
+                                </td>
+                                <td>
+                                    <p>USAR CASHBACK</p>
+                                    <input type="checkbox" id="usarCashback">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="totais">
+                    <table id="totais">
+                        <tbody>
+                            <tr>
+                                <td>Valor Restante</td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        id="valorRestante"
+                                        readonly
+                                    >
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Troco</td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        id="troco"
+                                        readonly
+                                    >
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="totalVenda">
+                    <h2>Valor Total:</h1>
+                    <input type="text" id="valorTotalPagamento" readonly>
+                    <button id="cancelarVendaPagamento" onclick="fecharPagamento()"><i class="fa-solid fa-xmark"></i></button>
+                    <button id="finalizarVendaPagamento" onclick="registrarVenda()"><i class="fa-solid fa-right-long"></i></button>
+                    <button id="imprimirPedido" onclick="imprimirPedido()"><i class="fa-solid fa-print"></i></button>
+                </div>
+
+                <p id="erroPagamento">Você precisa adicionar formas de pagamento antes de finalizar</p>
+
+            </div>
+        </section>
+
+        <section class="produtos">
+            <i id="conferirProds" onclick="conferenciaSimples()" class="fa-solid fa-clipboard-check"></i>
+            <i id="addProds" onclick="abrirSwalAdicionarProduto()" class="fa-solid fa-circle-plus"></i>
+        
+            
+            <h1>Lista de Produtos</h1>
+
+            <div class="tableContainer">
+                <table>
+                    <thead>
+                        <tr class="cabecalho">
+                            <td>Código</td>
+                            <td>Nome Produto</td>
+                            <td>Preço</td>
+                            <td>Estoque</td>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaProdutos"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="financeiro">
+            <div class="financeiroCima">
+                <div class="resumoSemanal">
+                    <h2>Quantidade de vendas da semana</h2>
+                    <hr>
+                    <div id="grafico"></div>
+                </div>
+
+                <div class="verFaturamento">
+                    <h2>Resumos Financeiros</h2>
+                    <hr>
+                    <div class="inputsData">
+                        <input type="date" id="dataInicial" class="meu-input-data">
+                        -
+                        <input type="date" id="dataFinal" class="meu-input-data">
+                    </div>
+                    <label>
+                        <p>Faturamento: </p>
+                       <p id="faturamento">R$ -</p> 
+                    </label>
+                    <label id="despesasLabel">
+                        <p>Custos:</p>
+                       <p id="despesas">R$ -</p> 
+                    </label>
+                    <label>
+                        <p>Lucro:</p>
+                       <p id="lucro">R$ -</p> 
+                    </label>
+                    <div class="loading-linha" id="loading"></div>
+                </div>
+
+                <div class="resumoMes" id="resumoMensal">
+                    <h2>Saúde financeira</h2>
+                    <hr>
+                    <label id="entradas">
+                        <p>Entradas</p>
+                        <i class="fa-solid fa-arrow-right-long"></i>
+                       <!-- <p>+ R$ 18658,25</p> -->
+                    </label>
+                    <label id="saidas">
+                        <p>Saídas</p>
+                        <i class="fa-solid fa-arrow-right-long"></i>
+                        <!-- <p>- R$ 14753,77</p> -->
+                    </label>
+                    <label id="balanco">
+                        <p>Balanço</p>
+                        <i class="fa-solid fa-arrow-right-long"></i>
+                        <!-- <p>+ R$ 3904,48</p> -->
+                    </label>
+                    <!-- CASO PRECISE DE MAIS RESUMOS COLOCAR AQUI ABAIXO -->
+                </div>
+            </div>
+            <div class="financeiroBaixo"></div>
+        </section>
+
+        <section class="lojas">
+            <h1>MINHA LOJA</h1>
+            <hr>
+            <div class="conteudo">
+                <div class="esquerda">
+                    <h2>Esquenta do Povo - Unidade 1</h2>
+                    <!--
+                    <div class="dadosLoja">
+                        <p>Endereço: Rua da república, 227A - Centenário | Campina Grande/PB</p>
+                        <p>Responsável: Calebe Evangelista</p>
+                    </div>
+                    -->
+                </div>
+                <div class="direita">
+                    <div class="taxas">
+                        <p>Taxas de pagamento:</p>
+                        <p>Crédito: 2,99%</p>
+                        <p>Débito: 1,99%</p>
+                        <p>IFOOD: 28,35%</p>
+                    </div>
+                    <div class="funcionarios">
+                        <p>Funcionários cadastrados:</p>
+                    </div>
+                </div>
+            </div>
+            
+        </section>
+    </main>
+</body>
+<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-storage-compat.js"></script>
+<script src="/JS/firebase-init.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="/JS/telegram.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<script src="/JS/pdv.js"></script>
+<script src="/JS/financeiro.js"></script>
+<script src="/JS/produtos.js"></script>
+<script src="/JS/compras.js"></script>
+<script src="/JS/loja.js"></script>
+<script src="/JS/authGuard.js"></script>
+<script src="/JS/home.js"></script>
+</html>

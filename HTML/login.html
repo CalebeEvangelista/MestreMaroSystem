@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Esquenta do Povo</title>
+  <link rel="icon" href="/IMAGENS/favicon.png" type="image/png" />
+  <link rel="stylesheet" href="/CSS/login.css" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+    integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+</head>
+<body>
+  <main class="login-page">
+    <section class="login-wrapper">
+      <div class="login-left">
+        <img
+          src="/IMAGENS/logo mestre maro.png"
+          alt="Logo Esquenta do Povo"
+          class="login-brand-logo"
+        />
+
+        <span class="login-badge">Acesso ao sistema</span>
+
+        <h1>Entre na plataforma e controle sua operação com mais velocidade</h1>
+
+        <p class="login-description">
+          Acesse vendas, estoque, clientes, relatórios, metas e toda a gestão do seu negócio
+          em um ambiente moderno, rápido e seguro.
+        </p>
+
+        <div class="login-features">
+          <div class="feature-pill">
+            <i class="fa-solid fa-cash-register"></i>
+            <span>PDV rápido</span>
+          </div>
+
+          <div class="feature-pill">
+            <i class="fa-solid fa-boxes-stacked"></i>
+            <span>Estoque integrado</span>
+          </div>
+
+          <div class="feature-pill">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Gestão inteligente</span>
+          </div>
+
+          <div class="feature-pill">
+            <i class="fa-brands fa-telegram"></i>
+            <span>PIX + Telegram</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="login-card">
+        <div class="login-card-top">
+          <img
+            src="/IMAGENS/logo mestre maro.png"
+            alt="Logo Esquenta do Povo"
+            class="login-card-logo"
+          />
+          <span class="card-tag">Login seguro</span>
+        </div>
+
+        <div class="login-title">
+          <h2>Faça seu login</h2>
+          <p>Entre com seu e-mail e senha para acessar o sistema.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="email">E-mail</label>
+          <div class="input-wrap">
+            <i class="fa-regular fa-envelope"></i>
+            <input type="email" required placeholder="Digite seu e-mail" id="email" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="senha">Senha</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" required placeholder="Digite sua senha" id="senha" />
+          </div>
+        </div>
+
+        <div class="login-links">
+          <p>
+            <a href="/HTML/cadastro.html">Recuperar senha</a>
+          </p>
+          <p>
+            <a href="/HTML/cadastro.html">Fazer seu cadastro</a>
+          </p>
+        </div>
+
+        <button class="login-button" onclick="login()">Entrar no sistema</button>
+
+        <div class="login-footer-info">
+          <span><i class="fa-solid fa-shield-halved"></i> Acesso protegido</span>
+          <span><i class="fa-solid fa-bolt"></i> Rápido e prático</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-storage-compat.js"></script>
+  <script src="/JS/firebase-init.js"></script>
+  <script src="/JS/login.js"></script>
+</body>
+</html>
