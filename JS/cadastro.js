@@ -52,7 +52,11 @@ function enviarDadosProBD(id, nome, nomeLoja, email) {
         id: id,
         cpf: '',
         lojas: lojas,
-        status: 'Pendente aprovação'
+        status: 'Pendente aprovação',
+        primeiroPagamento: '',
+        dataExpiracao: '',
+        usuariosAdicionais: '',
+        faturamentoTotal: 0
     }
 
     return firebase.firestore()

@@ -1,0 +1,189 @@
+/* ==================== SWEETALERT2 - SWAL USUÁRIO ==================== */
+
+/* Popup quadrado e centralizado */
+.swal-usuario-popup {
+    background: #161616 !important;
+    color: #f5f5f5 !important;
+    border-radius: 18px !important;
+    width: 65vw !important;      /* ocupa 65% da largura da tela */
+    height: 65vh !important;     /* ocupa 65% da altura da tela */
+    padding: 0 !important;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+    overflow: hidden;
+}
+
+/* Container geral */
+.swal-usuario-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 24px 32px;
+    gap: 20px;
+}
+
+/* Topo: Título + ID */
+.swal-usuario-header {
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    padding-bottom: 12px;
+}
+
+.swal-usuario-header h2 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.swal-usuario-header p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.6);
+}
+
+/* Corpo principal em 2 colunas */
+.swal-usuario-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Esquerda: infos do usuário */
+.swal-usuario-left {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.swal-usuario-left label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.8);
+}
+
+.swal-usuario-left input {
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.03);
+    color: #fff;
+    font-size: 1rem;
+}
+
+/* Direita: lojas (topo) + status/datas (baixo) */
+.swal-usuario-right {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Box para lojas e status/datas */
+.swal-usuario-box {
+    padding: 12px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Título das caixas */
+.swal-usuario-box h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.1rem;
+    color: #facc15;
+}
+
+/* Lojas empilhadas em colunas */
+.swal-usuario-lojas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.swal-usuario-loja {
+    padding: 6px 10px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 8px;
+}
+
+/* Usuários adicionais */
+.swal-usuario-adicionais {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.swal-usuario-adicional-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.95rem;
+}
+
+.swal-usuario-adicional-label span {
+    flex: 1;
+}
+
+/* Botões Alterar/Excluir */
+.swal-usuario-adicional-btn {
+    margin-left: 8px;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+}
+
+.swal-usuario-adicional-btn-alterar {
+    background-color: #4ade80;
+    color: #000;
+}
+
+.swal-usuario-adicional-btn-excluir {
+    background-color: #ef4444;
+    color: #fff;
+}
+
+/* ==================== Status e Datas (inputs alinhados em coluna) ==================== */
+.swal-usuario-box-status {
+    display: flex;
+    flex-direction: column; /* força elementos em linha própria */
+    gap: 12px;
+}
+
+.swal-usuario-box-status label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.8);
+}
+
+.swal-usuario-box-status input,
+.swal-usuario-box-status select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.03);
+    color: #fff;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+/* Botões padrão do Swal */
+.swal2-confirm {
+    background-color: #6366f1 !important;
+    color: #fff !important;
+    font-weight: 600;
+}
+
+.swal2-cancel {
+    background-color: #6b7280 !important;
+    color: #fff !important;
+    font-weight: 600;
+}

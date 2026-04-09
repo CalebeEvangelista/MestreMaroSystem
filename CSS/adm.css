@@ -1,0 +1,188 @@
+/* ==================== ESTILO GERAL DA PÁGINA ==================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  background: #0f0f0f;
+  color: #fff;
+}
+
+/* LAYOUT */
+.app {
+  display: flex;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 240px;
+  height: 100vh;
+  background: #0a0a0a;
+  border-right: 1px solid #1f1f1f;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo {
+  width: 140px;
+  margin-bottom: 30px;
+}
+
+/* MENU */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #aaa;
+}
+
+.nav-item:hover,
+.nav-item.active {
+  background: rgba(255, 214, 0, 0.1);
+  color: #ffd600;
+}
+
+/* LOGOUT */
+.logout {
+  margin-top: auto;
+  display: flex;
+  gap: 10px;
+  color: #ff5252;
+  cursor: pointer;
+}
+
+/* CONTEÚDO */
+.content {
+  flex: 1;
+  padding: 30px;
+}
+
+/* HEADER */
+.top h1 {
+  font-size: 24px;
+}
+
+.top p {
+  color: #888;
+  margin-bottom: 20px;
+}
+
+/* CARDS */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.card {
+  background: #151515;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #222;
+}
+
+.card strong {
+  font-size: 22px;
+}
+
+.card.warning {
+  border-left: 4px solid #ff9800;
+}
+
+.card.danger {
+  border-left: 4px solid #ff5252;
+}
+
+/* TABELA */
+.table-section {
+  background: #151515;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #222;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.table-header input {
+  background: #0f0f0f;
+  border: 1px solid #333;
+  padding: 8px;
+  border-radius: 6px;
+  color: #fff;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  font-size: 12px;
+  color: #888;
+  padding: 10px;
+}
+
+td {
+  padding: 12px 10px;
+  border-top: 1px solid #222;
+}
+
+/* STATUS */
+.status {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.ativo {
+  background: #1b5e20;
+  color: #00e676;
+}
+
+.vencendo {
+  background: #4e342e;
+  color: #ff9800;
+}
+
+.atraso {
+  background: #5a1a1a;
+  color: #ff5252;
+}
+
+/* BOTÕES */
+.btn {
+  background: #222;
+  border: none;
+  padding: 6px 10px;
+  margin-right: 5px;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.btn:hover {
+  transform: scale(1.1);
+  transition: all 0.3s ease-in-out;
+}
+
+.btn.edit {
+  background: #ffd600;
+  color: #000;
+}

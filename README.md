@@ -164,3 +164,7 @@ Funções do sistema:
 - Adicionado uma pagina de apresentação do projeto intitulada `index.html` e a que era essa virou `login.html`
 - Feito alteraçoes na pagina inicial
 - Adicionado arquivo ´.htaccess´ para melhor visualização dos links
+
+## V0.4.5
+- Adicionado pagina de ADM pra organizar as funções administrativas do sistema em um canto só
+- Organizado algumas coisas no geral

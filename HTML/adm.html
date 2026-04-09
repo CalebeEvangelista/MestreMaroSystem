@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>MESTRE MARO - ADMIN</title>
+
+  <link rel="icon" href="/IMAGENS/favicon.png">
+  <link rel="stylesheet" href="/CSS/adm.css">
+  <link rel="stylesheet" href="/CSS/admSwal.css">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <img src="/IMAGENS/logo mestre maro.png" class="logo">
+
+    <nav>
+      <div class="nav-item active">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Dashboard</span>
+      </div>
+
+      <div class="nav-item">
+        <i class="fa-solid fa-users"></i>
+        <span>Assinantes</span>
+      </div>
+
+      <div class="nav-item">
+        <i class="fa-solid fa-clock"></i>
+        <span>Vencimentos</span>
+      </div>
+
+      <div class="nav-item">
+        <i class="fa-solid fa-dollar-sign"></i>
+        <span>Faturamento</span>
+      </div>
+    </nav>
+
+    <div class="logout" onclick="voltarSistema()">
+      <i class="fa-solid fa-right-from-bracket"></i>
+      <span>Voltar para o sistema</span>
+    </div>
+  </aside>
+
+  <!-- CONTEÚDO -->
+  <main class="content">
+
+    <!-- HEADER -->
+    <header class="top">
+      <h1>Painel Administrativo</h1>
+      <p>Controle dos assinantes do sistema</p>
+    </header>
+
+    <!-- CARDS -->
+    <section class="cards">
+
+      <div class="card">
+        <h3>Assinantes Ativos</h3>
+        <strong id="ativos">-</strong>
+      </div>
+
+      <div class="card warning">
+        <h3>Vencendo</h3>
+        <strong id="vencendo">-</strong>
+      </div>
+
+      <div class="card danger">
+        <h3>Inadimplentes</h3>
+        <strong id="inadiplentes">-</strong>
+      </div>
+
+      <div class="card">
+        <h3>Faturamento assinaturas</h3>
+        <strong id="faturamento">R$ - </strong>
+      </div>
+
+    </section>
+
+    <!-- TABELA PRINCIPAL -->
+    <section class="table-section">
+
+      <div class="table-header">
+        <h2>Assinantes</h2>
+        <input type="text" placeholder="Buscar assinante...">
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Loja</th>
+            <th>Adicionais</th>
+            <th>Status</th>
+            <th>Expiração</th>
+            <th>Faturamento</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+
+        <tbody id="tabelaDashboard">
+          <!--
+          <tr>
+            <td>Calebe</td>
+            <td>Esquenta do Povo</td>
+            <td>4</td>
+            <td><span class="status ativo">Ativo</span></td>
+            <td>10/04</td>
+            <td>R$ 2.300</td>
+            <td>
+              <button class="btn">Ver</button>
+              <button class="btn edit">Editar</button>
+            </td>
+          </tr>
+
+          <tr>
+            <td>Maria</td>
+            <td>Loja Prime</td>
+            <td>4</td>
+            <td><span class="status vencendo">Vencendo</span></td>
+            <td>12/04</td>
+            <td>R$ 5.120</td>
+            <td>
+              <button class="btn">Ver</button>
+              <button class="btn edit">Editar</button>
+            </td>
+          </tr>
+
+          <tr>
+            <td>João</td>
+            <td>Loja Beer</td>
+            <td>4</td>
+            <td><span class="status atraso">Atrasado</span></td>
+            <td>01/04</td>
+            <td>R$ 900</td>
+            <td>
+              <button class="btn">Ver</button>
+              <button class="btn edit">Editar</button>
+            </td>
+          </tr>
+          -->
+        </tbody>
+      </table>
+
+    </section>
+
+  </main>
+
+</div>
+
+</body>
+<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-storage-compat.js"></script>
+<script src="/JS/firebase-init.js"></script>
+<script src="/JS/authGuard.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/JS/admin.js"></script>
+</html>
