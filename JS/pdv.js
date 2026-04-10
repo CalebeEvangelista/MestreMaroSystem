@@ -51,7 +51,9 @@ async function registrarVenda() {
     atualizarEstoque(vendaBase.produtos, idLoja);
     limparPDV();
     fecharPagamento();
-    console.log(vendaBase);
+    const inputProduto = document.getElementById("produto");
+    inputProduto.focus()
+
 }
 
 //FUNÇÃO ONDE CALCULA OS MEIOS DE PAGAMENTO NO PDV E COLOCAR O VALOR DAS TAXAS
@@ -150,85 +152,6 @@ function pix() {
     } else {
         gerarPixEEnviarTelegram(pixNumerico)
     }
-}
-
-//GERA O PIX E ENVIA A IMAGEM E CODIGO NO TELEGRAM
-async function gerarPixEEnviarTelegram(valor) {
-    try {
-        const pixCopiaECola = gerarPix(valor);
-        const qrCodeBase64 = await gerarQrCodeBase64(pixCopiaECola);
-
-        await enviarTelegramImagem(
-            qrCodeBase64,
-            `Pagamento Pix\nValor: R$ ${Number(valor).toFixed(2).replace(".", ",")}`
-        );
-
-        await enviarTelegram(pixCopiaECola);
-        alert('PIX enviado com sucesso')
-
-    } catch (erro) {
-        console.error("Erro no fluxo do Pix:", erro);
-    }
-}
-
-function gerarPix(valor) {
-    const chave = "42193719000136";
-    const nome = "ESQUENTA DO POVO";
-    const cidade = "CAMPINA GRANDE";
-
-    function format(id, value) {
-        const v = String(value);
-        const size = v.length.toString().padStart(2, "0");
-        return id + size + v;
-    }
-
-    function crc16(str) {
-        let crc = 0xFFFF;
-
-        for (let c = 0; c < str.length; c++) {
-            crc ^= str.charCodeAt(c) << 8;
-
-            for (let i = 0; i < 8; i++) {
-                if ((crc & 0x8000) !== 0) {
-                    crc = (crc << 1) ^ 0x1021;
-                } else {
-                    crc = crc << 1;
-                }
-            }
-        }
-
-        crc &= 0xFFFF;
-        return crc.toString(16).toUpperCase().padStart(4, "0");
-    }
-
-    const valorFormatado = Number(valor).toFixed(2);
-
-    let payload = "";
-
-    payload += format("00", "01");
-    payload += format(
-        "26",
-        format("00", "BR.GOV.BCB.PIX") +
-        format("01", chave)
-    );
-    payload += format("52", "0000");
-    payload += format("53", "986");
-    payload += format("54", valorFormatado);
-    payload += format("58", "BR");
-    payload += format("59", nome);
-    payload += format("60", cidade);
-    payload += format("62", format("05", "***"));
-    payload += "6304";
-    payload += crc16(payload);
-
-    return payload;
-}
-
-async function gerarQrCodeBase64(textoPix) {
-    return await QRCode.toDataURL(textoPix, {
-        width: 400,
-        margin: 2
-    });
 }
 
 //FUNÇÃO DE IMPRESSÃO DO PEDIDO
@@ -621,57 +544,101 @@ function abrirModalImpressaoPedido(){
     imprimirPedido();
 }
 
-//FUNÇÃO DE COMPLETAR O NOME DO PRODUTO NO PDV
+//FUNÇÃO DE COMPLETAR O NOME DO PRODUTO NO PDV E ADICIONAR INFORMAÇOES NA TELA
 function autoComplete() {
     const inputProduto = document.getElementById("produto");
-    const listaSugestoes = document.getElementById("sugestoes");
+    const quantidade = document.getElementById("quantidade");
+    const idLoja = localStorage.getItem('selecaoLoja');
     const db = firebase.firestore();
 
-    inputProduto.addEventListener("input", async () => {
+    // Cria datalist se não existir
+    let dataList = document.getElementById('listaProdutosSugestao');
+    if (!dataList) {
+        dataList = document.createElement("datalist");
+        dataList.id = "listaProdutosSugestao";
+        document.body.appendChild(dataList);
+    }
+    inputProduto.setAttribute("list", "listaProdutosSugestao");
 
-        const textoDigitado = inputProduto.value.toUpperCase();
-        if (textoDigitado.length < 2){
-            listaSugestoes.innerHTML = '';
-            return;
-        }
-
-        const snapshot = await db
-            .collection("produtos")
+    // Carrega todos os produtos da loja uma vez
+    (async () => {
+        const snapshot = await db.collection("produtos")
+            .where("idLoja", "==", idLoja)
             .orderBy("nome")
-            .where("nome", ">=", textoDigitado)
-            .where("nome", "<=", textoDigitado + "\uf8ff")
-            .limit(10)
             .get();
 
-        listaSugestoes.innerHTML = '';
-
+        dataList.innerHTML = ''; // garante que esteja limpo
         snapshot.forEach(doc => {
-            
             const produto = doc.data();
 
-            const idSelecao = localStorage.getItem('selecaoLoja')
+            const opt = document.createElement('option');
+            opt.value = produto.nome;                        // texto visível no input
+            opt.dataset.preco = produto.valorVenda;          // preço normal
+            opt.dataset.qtdAtacado = produto.qtdAtacado || 0;
+            opt.dataset.valorAtacado = produto.valorAtacado || produto.valorVenda;
 
-            if (produto.idLoja != idSelecao) return
-
-            const item = document.createElement("div");
-            item.classList.add("sugestao");
-            item.textContent = produto.nome;
-
-            item.onclick = () => {
-                inputProduto.value = produto.nome;
-
-                const preco = Number(produto.valorVenda);
-                document.getElementById("valorVendido").value =
-                    preco.toFixed(2).replace('.', ',');
-
-                const quantidade = document.getElementById("quantidade");
-                if (!quantidade.value) quantidade.value = 1;
-
-                listaSugestoes.innerHTML = '';
-            };
-
-            listaSugestoes.appendChild(item);
+            dataList.appendChild(opt);
         });
+    })();
+
+    // Quando o usuário seleciona um produto (clicando ou setas+Enter)
+    inputProduto.addEventListener("input", () => {
+        const selecionado = inputProduto.value;
+        const option = Array.from(document.querySelectorAll("#listaProdutosSugestao option"))
+            .find(o => o.value === selecionado);
+        if (!option) return;
+
+        // Atualiza preço do produto
+        const preco = Number(option.dataset.preco);
+        document.getElementById("valorVendido").value = preco.toFixed(2).replace('.', ',');
+
+        // Foca imediatamente no input de quantidade
+        quantidade.focus();
+    });
+
+    // Atualiza preço e total do item se quantidade >= atacado
+    quantidade.addEventListener("change", () => {
+        const nomeProduto = inputProduto.value || '';
+        const option = Array.from(document.querySelectorAll("#listaProdutosSugestao option"))
+            .find(o => o.value === nomeProduto);
+        if (!option) return;
+
+        const quantidadeDigitada = Number(quantidade.value);
+        const precoDigitado = document.getElementById('valorVendido');
+
+        if (quantidadeDigitada >= Number(option.dataset.qtdAtacado)) {
+            const valorAtacado = Number(option.dataset.valorAtacado);
+            precoDigitado.value = valorAtacado.toFixed(2).replace('.', ',');
+            const inputTotal = document.getElementById("totalItem");
+            inputTotal.value = (valorAtacado * quantidadeDigitada).toFixed(2).replace('.', ',');
+        }
+    });
+
+    // Atalhos de teclado
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Shift") {
+            event.preventDefault();
+
+            const produto = document.getElementById('produto').value.trim();
+            const quantidade = document.getElementById('quantidade').value.trim();
+            const valorVendido = document.getElementById('valorVendido').value.trim();
+
+            if (!produto || !quantidade || !valorVendido) {
+                console.warn("Preencha produto, quantidade e preço antes de adicionar");
+                return;
+            }
+
+            addToShoppingList(); // adiciona ao shopping list
+        }
+        if (event.key === "Enter") {
+            event.preventDefault();
+            abrirPagamento();
+        }
+        if (event.key === "F10") {
+            event.preventDefault();
+            registrarVenda()
+        }
+
     });
 }
 
@@ -700,7 +667,7 @@ function itensQuantidades() {
         });
     }
 
-    inputValor.addEventListener("input", () => {
+    inputValor.addEventListener("change", () => {
         formatarMoedaInput(inputValor);
         atualizarTotal();
     });

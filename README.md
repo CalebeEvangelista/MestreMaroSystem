@@ -168,3 +168,9 @@ Funções do sistema:
 ## V0.4.5
 - Adicionado pagina de ADM pra organizar as funções administrativas do sistema em um canto só
 - Organizado algumas coisas no geral
+
+## V0.4.6
+- Adicionado função de ajustar automaticamente o valor por atacado, antes tinha que ser colocado manualmente o valor, agora basta voce deixar pré-setado a quantidade de atacado e valor e ai quando você digitar na hora da venda no PDV ele já irá ajustar para o valor da venda no atacado
+- Alterado uma parte do codigo, agora após digitar e selecionar o nome do produto fica em foco o campo de quantidade e antes ele ficava com o valor `1` agora ele fica sem valor pra ficar mais facil na hora de passar a venda de forma mais rapida
+- Alterado tambem a parte de sugestáo e preenchimento do nome do produto, antes dependendo da quantidade de variação ele não mostrava todas, agora ele mostra todas e a seleção pode ser feita pelo teclado
+- Agora tambem voce pode usar o `shift` apos digitar a quantidade do produto para adicionar ele direto na lista de compras e o `enter` para abrir o menu de pagamento e o `F10` para finalizar a venda e registrar, assim melhorando a velocidade de uso do sistema

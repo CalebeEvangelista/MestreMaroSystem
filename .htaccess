@@ -10,10 +10,14 @@ RewriteRule ^HTML/cadastro\.html$ /cadastro [R=301,L]
 RewriteCond %{THE_REQUEST} \s/HTML/home\.html [NC]
 RewriteRule ^HTML/home\.html$ /home [R=301,L]
 
+RewriteCond %{THE_REQUEST} \s/HTML/adm\.html [NC]
+RewriteRule ^HTML/adm\.html$ /adm [R=301,L]
+
 # Mapeia URLs amigáveis para os arquivos reais
 RewriteRule ^login$ HTML/login.html [L]
 RewriteRule ^cadastro$ HTML/cadastro.html [L]
 RewriteRule ^home$ HTML/home.html [L]
+RewriteRule ^adm$ HTML/adm.html [L]
 
 # php -- BEGIN cPanel-generated handler, do not edit
 <IfModule mime_module>
