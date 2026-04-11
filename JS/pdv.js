@@ -7,7 +7,7 @@ let vendaAtual = {
 //FUNÇÃO PARA REGISTRAR A VENDA NO BD
 async function registrarVenda() {
     const pErro = document.getElementById('erroPagamento');
-    pErro.style.display = 'none';
+    if (pErro) pErro.style.display = 'none';
 
     const totalPagamentos = await calcularMeiosDePagamento();
 
@@ -1040,7 +1040,9 @@ function getTotalFinal() {
 // PUXAR A ALTERAÇÃO DO CHECKBOX PARA USAR O CASHBACK
 const usarCashback = document.getElementById('usarCashback')
 
-usarCashback.addEventListener('change', atualizarPagamento)
+if (usarCashback) {
+    usarCashback.addEventListener('change', atualizarPagamento)
+}
 
 // DETECTAR A ADIÇÃO DO NOME DO MALUGANGO PRA PUXAR O CASHBACK DELE
 async function mostrarCashbackDisponivel() {

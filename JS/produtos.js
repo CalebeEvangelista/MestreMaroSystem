@@ -762,6 +762,7 @@ async function conferenciaSimples() {
     .map(doc => {
       const data = doc.data();
 
+
       return {
         // 🔥 ESSENCIAL: docId é o identificador único no Firestore
         docId: doc.id,
@@ -773,11 +774,11 @@ async function conferenciaSimples() {
         id: data.id || data.codigoBarras || doc.id,
 
         // Estoque atual
-        estoque: Number(data.estoque) || 0
+        estoque: Number(data.estoque) || 'none'
       };
     })
     // 🔹 Remove produtos sem nome (dados inválidos)
-    .filter(produto => produto.nome)
+    .filter(produto => produto.nome && produto.estoque !== 'none')
     // 🔹 Ordena por nome
     .sort((a, b) => a.nome.localeCompare(b.nome));
 

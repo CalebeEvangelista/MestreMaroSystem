@@ -174,3 +174,8 @@ Funções do sistema:
 - Alterado uma parte do codigo, agora após digitar e selecionar o nome do produto fica em foco o campo de quantidade e antes ele ficava com o valor `1` agora ele fica sem valor pra ficar mais facil na hora de passar a venda de forma mais rapida
 - Alterado tambem a parte de sugestáo e preenchimento do nome do produto, antes dependendo da quantidade de variação ele não mostrava todas, agora ele mostra todas e a seleção pode ser feita pelo teclado
 - Agora tambem voce pode usar o `shift` apos digitar a quantidade do produto para adicionar ele direto na lista de compras e o `enter` para abrir o menu de pagamento e o `F10` para finalizar a venda e registrar, assim melhorando a velocidade de uso do sistema
+
+## V0.4.7
+- Adicionado página de clientes, onde além de ter a lista com as informações tem botoes pra excluir e editar cadastro do cliente
+- Corrigido função de conferencia, agora caso o produto da vez seja produto sem rastreamento de estoque ele ignora na hora de conferir
+- Colocado o script de `Resumo do dia`, onde na tela de visão geral você vai conseguir ver o valor da maior venda do dia, item do dia mais vendido e o cliente que mais gastou naquele dia na sua operação

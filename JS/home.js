@@ -1,3 +1,4 @@
+
 function logout() {
     firebase.auth().signOut()
     .then(() => {
@@ -841,6 +842,102 @@ async function top5ProdutosMaisVendidos() {
     return top5;
 }
 
+async function resumoDia() {
+    const idLoja = localStorage.getItem('selecaoLoja')
+    const db = firebase.firestore();
+    const snapshot = await db.collection("vendas").where('idLoja', '==', idLoja).get();
+
+    const maiorVenda = document.getElementById('maiorVenda')
+    const itemMaisVendido = document.getElementById('itemMaisVendido')
+    const clienteTop = document.getElementById('clienteTop')
+
+    var rankingVendas = []
+    var rankingProdutos = []
+    var rankingClientes = []
+
+    const data = new Date()
+    const hoje = data.toLocaleDateString('pt-BR');
+
+    var contagem = {};
+    var gastoClientes = {};
+
+    snapshot.forEach(vendas => {
+        const venda = vendas.data()
+        //Encontra as vendas de hoje
+        if(venda.data != hoje) return
+
+        //Coleta os dados e registro nos rankings
+        venda.produtos.forEach(produto => {
+            rankingProdutos.push({
+                produto: produto.nome, 
+                qtdVendidos: produto.quantidade
+            })            
+        })
+
+        rankingVendas.push(venda.totalVenda)
+
+        if(venda.cliente && venda.cliente != 'Sem Nome') {
+            rankingClientes.push(venda.cliente)
+
+            if(!gastoClientes[venda.cliente]) {
+                gastoClientes[venda.cliente] = 0
+            }
+
+            gastoClientes[venda.cliente] += Number(venda.totalVenda) || 0
+        }
+    })
+
+    rankingClientes.forEach(nome => {
+        contagem[nome] = (contagem[nome] || 0) + 1;
+    });
+
+    const rankingFinalClientes = Object.entries(contagem)
+        .map(([cliente, qtdCompras]) => ({
+            cliente,
+            qtdCompras
+        }))
+        .sort((a, b) => b.qtdCompras - a.qtdCompras);
+
+    // Rankeia cliente que mais gastou
+    const rankingPorGasto = Object.entries(gastoClientes)
+        .map(([cliente, totalGasto]) => ({
+            cliente,
+            totalGasto
+        }))
+        .sort((a, b) => b.totalGasto - a.totalGasto);
+
+    // Rankeia o produto mais vendido
+    const agrupado = {};
+    rankingProdutos.forEach(item => {
+        const nome = item.produto;
+        if (!agrupado[nome]) {
+            agrupado[nome] = 0;
+        }
+        agrupado[nome] += item.qtdVendidos;
+    });
+
+    const rankingFinal = Object.entries(agrupado)
+        .map(([produto, total]) => ({
+            produto,
+            qtdVendidos: total
+        }))
+        .sort((a, b) => b.qtdVendidos - a.qtdVendidos);
+
+    // Rankeia as vendas da maior pra menor
+    rankingVendas.sort((a, b) => b - a);
+
+    //Joga os resultados no HTML
+    maiorVenda.textContent = rankingVendas.length
+        ? 'R$ ' + Number(rankingVendas[0]).toFixed(2).replace('.', ',')
+        : 'R$ 0,00'
+
+    itemMaisVendido.textContent = rankingFinal[0]?.produto.toLowerCase().replace(/\b\w/g, letra => letra.toUpperCase()) || '—'
+
+    clienteTop.textContent = rankingPorGasto.length
+        ? `${rankingPorGasto[0].cliente}`
+        : '—'
+}
+
 verificarIdLoja()
 ultimasVendas()
 calcularMetas()
@@ -849,3 +946,4 @@ itensQuantidades()
 reloadVisaoGeral()
 estoqueBaixo()
 mostrarCashbackDisponivel()
+resumoDia()
