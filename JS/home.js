@@ -601,7 +601,7 @@ async function estoqueBaixo() {
 
     if(lista.length > 0) {
         const nomes = lista.map(item => item.nome).join('\n')
-        console.log('Produtos com estoque baixo:\n\n' + nomes)
+        //console.log('Produtos com estoque baixo:\n\n' + nomes)
     }
 }
 

@@ -774,7 +774,7 @@ async function conferenciaSimples() {
         id: data.id || data.codigoBarras || doc.id,
 
         // Estoque atual
-        estoque: Number(data.estoque) || 'none'
+        estoque: Number.isFinite(Number(data.estoque)) ? Number(data.estoque) : 'none'
       };
     })
     // 🔹 Remove produtos sem nome (dados inválidos)
@@ -945,43 +945,28 @@ async function conferenciaSimples() {
     icon: "success",
     heightAuto: false
   });
-
-  window.location.reload();
 }
 
 async function salvarConferenciaNoBanco(listaConferencia) {
   const db = firebase.firestore();
-
-  let atualizados = 0;
   const erros = [];
+  let atualizados = 0;
 
-  for (const item of listaConferencia) {
-    try {
-      const estoqueNovo = Number(item.qtdInformada);
-
-      // 🔹 Validação de segurança
-      if (isNaN(estoqueNovo) || estoqueNovo < 0) {
-        erros.push({
-          nome: item.nome,
-          motivo: "Quantidade inválida"
-        });
-        continue;
-      }
-
-      // 🔥 ATUALIZA DIRETO PELO docId (SEM BUSCA)
-      await db.collection("produtos").doc(item.docId).update({
-        estoque: estoqueNovo
-      });
-
-      atualizados++;
-
-    } catch (error) {
-      erros.push({
-        nome: item.nome,
-        motivo: error.message
-      });
+  // 🔹 Atualiza tudo em paralelo
+  await Promise.all(listaConferencia.map(async (item) => {
+    const estoqueNovo = Number(item.qtdInformada);
+    if (!Number.isFinite(estoqueNovo) || estoqueNovo < 0) {
+      erros.push({ nome: item.nome, motivo: "Quantidade inválida" });
+      return;
     }
-  }
+    try {
+      await db.collection("produtos").doc(item.docId).update({ estoque: estoqueNovo });
+      atualizados++;
+    } catch (error) {
+      erros.push({ nome: item.nome, motivo: error.message });
+      console.error(error);
+    }
+  }));
 
   return { atualizados, erros };
 }

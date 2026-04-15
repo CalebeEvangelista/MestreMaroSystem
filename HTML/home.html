@@ -113,7 +113,7 @@
                         Venda mais alta: <strong id="maiorVenda">R$ -</strong>
                     </h4>
                     <h4>
-                        Item mais vendido: <strong id="itemMaisVendido">-</strong>
+                        Item mais vendido: <br> <strong id="itemMaisVendido">-</strong>
                     </h4>
                     <h4>
                         Cliente TOP #1: <strong id="clienteTop">-</strong>
@@ -545,22 +545,59 @@
                     <label id="entradas">
                         <p>Entradas</p>
                         <i class="fa-solid fa-arrow-right-long"></i>
-                       <!-- <p>+ R$ 18658,25</p> -->
                     </label>
                     <label id="saidas">
                         <p>Saídas</p>
                         <i class="fa-solid fa-arrow-right-long"></i>
-                        <!-- <p>- R$ 14753,77</p> -->
                     </label>
                     <label id="balanco">
                         <p>Balanço</p>
                         <i class="fa-solid fa-arrow-right-long"></i>
-                        <!-- <p>+ R$ 3904,48</p> -->
                     </label>
                     <!-- CASO PRECISE DE MAIS RESUMOS COLOCAR AQUI ABAIXO -->
                 </div>
             </div>
-            <div class="financeiroBaixo"></div>
+            <div class="financeiroBaixo">
+                <div class="lucroPorDia">
+                    <h2>Lucro por dia</h2>
+
+                    <hr>
+
+                    <div class="lucros" id="lucroPorDia"></div>
+                </div>
+
+                <div class="vendasMeios" style="margin-left: 3em;">
+                    <h2>Vendas meios de pagamento</h2>
+                    <hr>
+                    <div class="meios" id="meios">
+                        <label style="color: green;">
+                            <p>DINHEIRO</p>
+                            <p>-></p>
+                            <p id="dinheiro">R$ -</p>
+                        </label>
+                        <label style="color: blue;">
+                            <p>PIX</p>
+                            <p>-></p>
+                            <p id="pix">R$ -</p>
+                        </label>
+                        <label style="color: purple;">
+                            <p>DÉBITO</p>
+                            <p>-></p>
+                            <p id="debito">R$ -</p>
+                        </label>
+                        <label style="color: yellow;">
+                            <p>CRÉDITO</p>
+                            <p>-></p>
+                            <p id="credito">R$ -</p>
+                        </label>
+                        <label style="color: red;">
+                            <p>IFOOD</p>
+                            <p>-></p>
+                            <p id="ifood">R$ -</p>
+                        </label>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <section class="lojas">
@@ -569,12 +606,13 @@
             <div class="conteudo">
                 <div class="esquerda">
                     <h2>Esquenta do Povo - Unidade 1</h2>
-                    <!--
                     <div class="dadosLoja">
                         <p>Endereço: Rua da república, 227A - Centenário | Campina Grande/PB</p>
                         <p>Responsável: Calebe Evangelista</p>
                     </div>
-                    -->
+                    <div class="funcionarios">
+                        
+                    </div>
                 </div>
                 <div class="direita">
                     <div class="taxas">

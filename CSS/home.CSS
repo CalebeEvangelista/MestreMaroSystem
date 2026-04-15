@@ -623,7 +623,7 @@ main section {
 }
 
 .visao {
-    display: flex;
+    display: none;
     transition: 1s ease-in;
     width: 100%;
     height: 100%;
@@ -699,6 +699,7 @@ main section {
     margin-top: 0.3em;
     margin-bottom: 0.5em;
     font-weight: 300;
+    text-align: center;
 }
 
 .balancoDia strong, .balancoMes strong, .visaoDia strong {
@@ -1198,7 +1199,7 @@ tbody tr:nth-child(odd) {
 }
 
 .financeiro {
-    display: none;
+    display: flex;
     flex-direction: column;
     padding: 1em;
 }
@@ -1211,7 +1212,11 @@ tbody tr:nth-child(odd) {
     justify-content: space-between;
 }
 
-.resumoMes, .verFaturamento, .resumoSemanal {
+.financeiroBaixo {
+    justify-content: center;
+}
+
+.resumoMes, .verFaturamento, .resumoSemanal, .lucroPorDia,  .vendasMeios{
     background-color: rgba(0, 0, 0, 0.329);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(15px);
@@ -1226,12 +1231,12 @@ tbody tr:nth-child(odd) {
     border-radius: 10px;
 }
 
-.financeiroCima hr {
+.financeiroCima hr, .financeiroBaixo hr {
     width: 40%;
     margin-top: 1em;
 }
 
-.resumoMes label, .verFaturamento label {
+.resumoMes label, .verFaturamento label, .lucros label, .meios label {
     display: flex;
     background-color: #121212;
     width: 75%;
@@ -1282,6 +1287,32 @@ tbody tr:nth-child(odd) {
 
 .meu-input-data::-webkit-calendar-picker-indicator {
     filter: invert(1); /* inverte cores para branco */
+}
+
+.lucroPorDia, .vendasMeios {
+    height: 85%;
+    width: 20%;
+}
+
+.lucros, .meios {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.lucros label {
+    color: green;
+    width: 100%;
+}
+
+.lucros label p, .meios label p {
+    width: 33%;
+    text-align: center;
+}
+
+.meios label {
+    color: white;
+    width: 100%;
 }
 
 .loading-linha {

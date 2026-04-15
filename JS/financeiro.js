@@ -1,45 +1,82 @@
-// SÓ VAI FUNCIONAR MESMO A PARTIR DO MÊS DE MARÇO PORQUE VAI TER DADOS PRA ISSO
 async function saudeMensal() {
-    const db = firebase.firestore();
-
-    const snapshot = await db.collection('vendas').get()
-
     const idLoja = localStorage.getItem('selecaoLoja')
+    const db = firebase.firestore()
 
-    let totalEntradas = 0
-    let totalSaidas = 586.18 //NÚMERO PROVISÓRIO, TROCAR PELA SOMA DAS COMPRAS E POSSIVEIS SAÍDAS
+    // Primeiro e último dia do mês atual
+    const hoje = new Date()
+    const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
+    primeiroDiaMes.setHours(0,0,0,0) // 00:00:00
+    const ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0)
+    ultimoDiaMes.setHours(23,59,59,999) // 23:59:59
 
-    // CALCULANDO O TOTAL DE ENTRADAS
-    snapshot.forEach(venda => {
-        const dados = venda.data();
-        if (dados.idLoja != idLoja) return
-        totalEntradas += dados.totalVenda
+    const timestampInicio = firebase.firestore.Timestamp.fromDate(primeiroDiaMes)
+    const timestampFim = firebase.firestore.Timestamp.fromDate(ultimoDiaMes)
+
+    // Pré-carrega todos os produtos da loja
+    const snapshotProdutos = await db.collection('produtos')
+        .where('idLoja', '==', idLoja)
+        .get()
+
+    const mapaProdutos = {}
+    snapshotProdutos.forEach(doc => {
+        const dados = doc.data()
+        mapaProdutos[dados.nome] = dados
     })
 
-    const entradas = document.getElementById('entradas')
-    const pEntradas = document.createElement('p')
-    pEntradas.textContent = "+ " + "R$ " + totalEntradas.toFixed(2).replace('.',',')
-    entradas.appendChild(pEntradas)
+    // Busca todas as vendas do mês atual com limite superior
+    const snapshot = await db.collection('vendas')
+        .where('idLoja', '==', idLoja)
+        .where('criadoEm', '>=', timestampInicio)
+        .where('criadoEm', '<=', timestampFim) // ajuste: limite superior do mês
+        .orderBy('criadoEm', 'asc')
+        .get()
 
-    const saidas = document.getElementById('saidas')
-    const pSaidas = document.createElement('p')
-    pSaidas.textContent = "+ " + "R$ " + totalSaidas.toFixed(2).replace('.',',')
-    saidas.appendChild(pSaidas)
+    try {
+        // Calcula lucro de cada venda em paralelo
+        const promessas = snapshot.docs.map(dados => {
+            const venda = dados.data()
+            const totalVenda = Number(venda.totalVenda || 0)
+            return calcularLucro(venda.produtos, venda.meiosPagamento)
+                .then(lucroVenda => ({
+                    totalVenda,
+                    lucro: Number(lucroVenda || 0)
+                }))
+        })
 
-    const balanco = document.getElementById('balanco')
-    const pBalanco = document.createElement('p')
-    const somaBalanco = totalEntradas - totalSaidas
-    if (somaBalanco > 0){
-        pBalanco.textContent ='+ ' + "R$ " + somaBalanco.toFixed(2).replace('.',',')
-        balanco.style.color = 'green'
-        balanco.appendChild(pBalanco)
-    } else {
-        pBalanco.textContent ="R$ " + somaBalanco.toFixed(2).replace('.',',')
-        balanco.style.color = 'red'
-        balanco.appendChild(pBalanco)
+        const resultados = await Promise.all(promessas)
+
+        
+
+        // Soma total de entradas, lucro e custos
+        const totalEntradas = resultados.reduce((acc, r) => acc + r.totalVenda, 0)
+        const lucroTotal = resultados.reduce((acc, r) => acc + r.lucro, 0)
+        const totalSaidas = totalEntradas - lucroTotal
+        const somaBalanco = totalEntradas - totalSaidas
+
+        // Atualiza DOM mantendo títulos
+        const entradasSpace = document.getElementById('entradas')
+        const pEntradas = document.createElement('p')
+        pEntradas.textContent = 'R$ ' + totalEntradas.toFixed(2).replace('.',',')
+        entradasSpace.appendChild(pEntradas)
+
+        const saidasSpace = document.getElementById('saidas')
+        const pSaidas = document.createElement('p')
+        pSaidas.textContent = 'R$ ' + totalSaidas.toFixed(2).replace('.',',')
+        saidasSpace.appendChild(pSaidas)
+
+        const balancoSpace = document.getElementById('balanco')
+        const pBalanco = document.createElement('p')
+        if (somaBalanco < 0) {
+            pBalanco.textContent = '- R$ ' + somaBalanco.toFixed(2).replace('.',',')
+        } else {
+            pBalanco.textContent = 'R$ ' + somaBalanco.toFixed(2).replace('.',',')
+        }
+        pBalanco.style.color = somaBalanco >= 0 ? 'green' : 'red'
+        balancoSpace.appendChild(pBalanco)
+
+    } finally {
+        
     }
-    
-    
 }
 
 function descobrirSemana() {
@@ -163,18 +200,16 @@ function parseDataInput(inputStr) {
     return new Date(ano, mes-1, dia)
 }
 
-async function faturamentoPorDia() { //FUNÇÃO QUE EU ESCOLHO A DATA E ELE ME RETORNA O FATURAMENTO E LUCRO
-    // PUXA TODOS OS INPUTS E O QUE PRECISAR MAIS
+async function faturamentoPorDia() { // FUNÇÃO QUE RETORNA FATURAMENTO E LUCRO A PARTIR DA DATA
     const dataFinal = document.getElementById('dataFinal')
     const dataInicial = document.getElementById('dataInicial')
-    const faturamento = document.getElementById('faturamento')
-    const despesas = document.getElementById('despesas')
-    const lucro = document.getElementById('lucro')
     const idLoja = localStorage.getItem('selecaoLoja')
     const db = firebase.firestore()
-    const snapshot = await db.collection('vendas').get()
 
     async function calcularFaturamento() {
+        // só processa se ambas as datas estiverem preenchidas
+        if (!dataInicial.value || !dataFinal.value) return
+
         // ZERA TODAS AS LETS PRA PODER INICIAR O CALCULO
         let faturamentoTotal = 0
         let custosTotais = 0
@@ -183,51 +218,80 @@ async function faturamentoPorDia() { //FUNÇÃO QUE EU ESCOLHO A DATA E ELE ME R
         // PUXA OS INPUTS DAS DATAS
         const inicio = parseDataInput(dataInicial.value)
         const fim = parseDataInput(dataFinal.value)
+        // ajusta horário para considerar o dia inteiro
+        inicio.setHours(0,0,0,0)
+        fim.setHours(23,59,59,999)
 
-        // ABRE O LOADING PRA PODER MOSTRAR QUE TÁ CARREGANDO NA TELA
+        // CONVERTE PARA Timestamps DO FIRESTORE PARA FILTRAGEM DIRETA
+        const timestampInicio = firebase.firestore.Timestamp.fromDate(inicio)
+        const timestampFim = firebase.firestore.Timestamp.fromDate(fim)
+
+        // ABRE O LOADING APENAS UMA VEZ
         Loading()
 
-        // ENTRA NUM FOR PRA PODER VER VENDA A VENDA
-        for (const venda of snapshot.docs) {
-            const dados = venda.data()
+        try {
+            // PRÉ-CARREGA TODOS OS PRODUTOS DA LOJA
+            const snapshotProdutos = await db.collection('produtos')
+                .where('idLoja', '==', idLoja)
+                .get()
+            const mapaProdutos = {}
+            snapshotProdutos.forEach(doc => {
+                const dados = doc.data()
+                mapaProdutos[dados.nome] = dados
+            })
 
-            // SE O ID NA VENDA NÃO FOR O MESMO DA LOJA SELECIONADA ELE NÃO CONTINUA
-            if (dados.idLoja !== idLoja) continue
+            // FILTRA NO FIRESTORE PARA PEGAR APENAS AS VENDAS DO INTERVALO
+            const snapshot = await db.collection('vendas')
+                .where('idLoja', '==', idLoja)
+                .where('criadoEm', '>=', timestampInicio)
+                .where('criadoEm', '<=', timestampFim)
+                .orderBy('criadoEm', 'asc')
+                .get()
 
-            // PUXA A DATA DA VENDA E CONVERTE PARA UMA DATA QUE O SISTEMA LÊ MELHOR
-            const vendaData = parseData(dados.data)
+            // PROCESSA TODAS AS VENDAS EM PARALELO COM PROMISE.ALL
+            const promessas = snapshot.docs.map(dados => {
+                const venda = dados.data()
+                console.log(venda)
+                const totalVenda = Number(venda.totalVenda || 0)
+                return calcularLucro(venda.produtos, venda.meiosPagamento) // apenas 2 parâmetros
+                    .then(lucroVenda => ({
+                        totalVenda,
+                        lucroVenda: Number(lucroVenda || 0)
+                    }))
+            })
 
-            // SE A DATA DA VENDA FOR MAIOR OU IGUAL A DATA INICIO E MENOS OU IGUAL A DATA FIM ELE ENTRA NO IF
-            if (vendaData >= inicio && vendaData <= fim) {
-                faturamentoTotal += Number(dados.totalVenda)
-                
-                // ELE VAI FAZER O CALCULO DO CUSTO EM OUTRA FUNÇÃO E O SISTEMA ESPERA ELE TERMINAR TUDO
-                const lucro = await calcularLucro(dados.produtos, dados.meiosPagamento)
-                lucroTotal += lucro
-            }
+            const resultados = await Promise.all(promessas)
+
+            // SOMA FATURAMENTO E LUCRO
+            faturamentoTotal = resultados.reduce((acc, r) => acc + r.totalVenda, 0)
+            lucroTotal = resultados.reduce((acc, r) => acc + r.lucroVenda, 0)
+
+            // CALCULA CUSTOS TOTAIS
+            custosTotais = faturamentoTotal - lucroTotal
+
+            // ESCREVE TUDO NO SISTEMA PRA FICAR VISIVEL COM <p> mantendo títulos
+            const pEntradas = document.getElementById('faturamento')
+            pEntradas.textContent = 'R$ ' + faturamentoTotal.toFixed(2).replace('.',',')
+
+            const pDespesas = document.getElementById('despesas')
+            pDespesas.textContent = 'R$ ' + custosTotais.toFixed(2).replace('.',',')
+
+            const pLucro = document.getElementById('lucro')
+            const lucroPercent = faturamentoTotal > 0 ? (lucroTotal / faturamentoTotal) * 100 : 0
+            pLucro.textContent = 'R$ ' + lucroTotal.toFixed(2).replace('.',',') + ' ou ' + lucroPercent.toFixed(2) + '%'
+
+        } finally {
+            // GARANTE QUE O LOADING TERMINA, MESMO SE DER ERRO
+            Loading()
         }
-
-        // PARA O LOADING
-        Loading()
-
-        //ELE FAZ UMA SOMA SIMPLES, TIRA O LUCRO DO FATURAMENTO E O QUE RESTAR É CUSTO
-        custosTotais = faturamentoTotal - lucroTotal
-
-        // ESCREVE TUDO NO SISTEMA PRA FICAR VISIVEL
-        faturamento.textContent = 'R$ ' + faturamentoTotal.toFixed(2)
-        const lucroPercent = faturamentoTotal > 0 ? (lucroTotal / faturamentoTotal) * 100 : 0;
-        lucro.textContent = 'R$ ' + lucroTotal.toFixed(2) + ' ou ' + lucroPercent.toFixed(2) + '%'
-        despesas.textContent = 'R$ ' + custosTotais.toFixed(2)
     }
 
     // Atualiza sempre que mudar a data inicial ou final
     dataInicial.addEventListener('change', calcularFaturamento)
     dataFinal.addEventListener('change', calcularFaturamento)
 
-    // Calcula inicialmente se já houver valores preenchidos
-    if (dataInicial.value && dataFinal.value) {
-        calcularFaturamento()
-    }
+    // Calcula inicialmente apenas se já houver valores preenchidos
+    calcularFaturamento()
 }
 
 //Função de calculo de lucro
@@ -244,10 +308,6 @@ async function calcularLucro(produtos, pagamento) {
     // Soma todas as taxas
     pagamento.forEach(meio => {
         taxaPaga += Number(meio.taxa || 0)
-
-        console.log('--- PAGAMENTO ---')
-        console.log(meio)
-        console.log('taxa acumulada:', taxaPaga)
     })
 
     // Cria um mapa de produtos pra busca rápida
@@ -292,11 +352,193 @@ async function calcularLucro(produtos, pagamento) {
     return Number(lucroTotal.toFixed(2))
 }
 
+async function lucrosPorDia() {
+    const idLoja = localStorage.getItem('selecaoLoja')
+    const db = firebase.firestore()
+
+    // calcula timestamp de 4 dias atrás (inclui dia atual = 5 dias no total)
+    const hoje = new Date()
+    hoje.setHours(0,0,0,0)  // zera hora, minuto, segundo, ms
+    const quatroDiasAtras = new Date()
+    quatroDiasAtras.setDate(hoje.getDate() - 4)
+    quatroDiasAtras.setHours(0,0,0,0)
+
+    const timestampLimite = firebase.firestore.Timestamp.fromDate(quatroDiasAtras)
+
+    // pré-carrega todos os produtos da loja (mapa)
+    const snapshotProdutos = await db.collection('produtos')
+        .where('idLoja', '==', idLoja)
+        .get()
+
+    const mapaProdutos = {}
+    snapshotProdutos.forEach(doc => {
+        const dados = doc.data()
+        mapaProdutos[dados.nome] = dados
+    })
+
+    // pega vendas dos últimos 5 dias
+    const vendasSnapshot = await db.collection('vendas')
+        .where('idLoja', '==', idLoja)
+        .where('criadoEm', '>=', timestampLimite)
+        .orderBy('criadoEm', 'desc')
+        .get()
+
+    // processa todas as vendas em paralelo
+    const promessas = vendasSnapshot.docs.map(dados => {
+        const venda = dados.data()
+        return calcularLucro(venda.produtos, venda.meiosPagamento, mapaProdutos)
+            .then(lucroDaVenda => ({
+                lucro: lucroDaVenda,
+                dataVenda: venda.data,
+                idVenda: venda.idVenda
+            }))
+    })
+
+    const vendasPorDia = await Promise.all(promessas)
+
+    // agrupa lucros por data
+    const lucroPorDataObj = {}
+    vendasPorDia.forEach(item => {
+        if (!lucroPorDataObj[item.dataVenda]) lucroPorDataObj[item.dataVenda] = 0
+        lucroPorDataObj[item.dataVenda] += item.lucro
+    })
+
+    const lucroPorData = Object.keys(lucroPorDataObj).map(data => ({
+        dataVenda: data,
+        lucroTotal: Number(lucroPorDataObj[data].toFixed(2))
+    }))
+
+    // monta DOM usando DocumentFragment
+    const fragment = document.createDocumentFragment()
+    lucroPorData.forEach(dataVendas => {
+        const label = document.createElement('label')
+
+        const data = document.createElement('p')
+        data.textContent = dataVendas.dataVenda
+        label.appendChild(data)
+
+        const seta = document.createElement('p')
+        seta.textContent = '->'
+        label.appendChild(seta)
+
+        const reais = document.createElement('p')
+        reais.textContent = 'R$' + dataVendas.lucroTotal.toFixed(2).replace('.',',')
+        label.appendChild(reais)
+
+        fragment.appendChild(label)
+    })
+
+    document.getElementById('lucroPorDia').appendChild(fragment)
+}
+
+async function vendasPorMeio() {
+    const idLoja = localStorage.getItem('selecaoLoja')
+    const db = firebase.firestore()
+
+    const hoje = new Date()
+    const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
+    primeiroDiaMes.setHours(0, 0, 0, 0)
+    const ultimoDiaMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0)
+    ultimoDiaMes.setHours(23, 59, 59, 999)
+
+    const timestampInicio = firebase.firestore.Timestamp.fromDate(primeiroDiaMes)
+    const timestampFim = firebase.firestore.Timestamp.fromDate(ultimoDiaMes)
+
+    const snapshot = await db.collection('vendas')
+        .where('idLoja', '==', idLoja)
+        .where('criadoEm', '>=', timestampInicio)
+        .where('criadoEm', '<=', timestampFim)
+        .orderBy('criadoEm', 'asc')
+        .get()
+
+    const vendasAgregadas = {}
+
+    snapshot.forEach(doc => {
+        const venda = doc.data()
+        const totalVenda = Number(venda.totalVenda || 0)
+        const meios = venda.meiosPagamento || []
+
+        // Log de divergência detalhado
+        const somaMeios = meios.reduce((acc, m) => acc + Number(m.valor || 0), 0)
+        if (Math.abs(somaMeios - totalVenda) > 0.01) {
+            const detalhesMeios = meios.map(m => `${m.tipoPagamento}: ${m.valor}`).join(' | ')
+            console.warn(`Divergência na venda ${doc.id}: totalVenda=${totalVenda}, somaMeios=${somaMeios.toFixed(2)}, diferença=${(somaMeios - totalVenda).toFixed(2)} — Meios: ${detalhesMeios}`)
+        }
+
+        // Soma de todos os meios não-dinheiro desta venda
+        const totalOutrosMeios = meios
+            .filter(m => m.tipoPagamento !== 'DINHEIRO')
+            .reduce((acc, m) => acc + Number(m.valor || 0), 0)
+
+        // Quanto resta para o dinheiro cobrir (após os outros meios)
+        const restanteParaDinheiro = Math.max(0, totalVenda - totalOutrosMeios)
+
+        // Soma de todo dinheiro informado nesta venda
+        const totalDinheiroInformado = meios
+            .filter(m => m.tipoPagamento === 'DINHEIRO')
+            .reduce((acc, m) => acc + Number(m.valor || 0), 0)
+
+        // Dinheiro efetivo = apenas o que cobre o restante (sem troco)
+        const dinheiroEfetivo = Math.min(totalDinheiroInformado, restanteParaDinheiro)
+
+        // Total efetivo de outros meios = limitado ao totalVenda menos o dinheiro efetivo
+        const limiteOutrosMeios = totalVenda - dinheiroEfetivo
+
+        // Fator de escala para outros meios caso ultrapassem o limite
+        const escalaOutrosMeios = totalOutrosMeios > 0
+            ? Math.min(1, limiteOutrosMeios / totalOutrosMeios)
+            : 1
+
+        // Agrega cada meio de pagamento
+        meios.forEach(meio => {
+            const tipo = meio.tipoPagamento
+            const valor = Number(meio.valor || 0)
+
+            if (tipo === 'DINHEIRO') {
+                if (totalDinheiroInformado > 0) {
+                    const proporcao = valor / totalDinheiroInformado
+                    vendasAgregadas['DINHEIRO'] = (vendasAgregadas['DINHEIRO'] || 0)
+                        + dinheiroEfetivo * proporcao
+                }
+            } else {
+                // Aplica escala caso a soma dos outros meios ultrapasse o limite
+                vendasAgregadas[tipo] = (vendasAgregadas[tipo] || 0)
+                    + valor * escalaOutrosMeios
+            }
+        })
+    })
+
+    // Arredonda tudo para evitar imprecisão de ponto flutuante
+    Object.keys(vendasAgregadas).forEach(tipo => {
+        vendasAgregadas[tipo] = Math.round(vendasAgregadas[tipo] * 100) / 100
+    })
+
+    document.getElementById('dinheiro').textContent = 'R$ ' + (vendasAgregadas['DINHEIRO'] || 0).toFixed(2).replace('.', ',')
+    document.getElementById('dinheiro').style.color = 'green'
+
+    document.getElementById('pix').textContent = 'R$ ' + (vendasAgregadas['PIX'] || 0).toFixed(2).replace('.', ',')
+    document.getElementById('pix').style.color = 'blue'
+
+    document.getElementById('debito').textContent = 'R$ ' + (vendasAgregadas['DEBITO'] || 0).toFixed(2).replace('.', ',')
+    document.getElementById('debito').style.color = 'purple'
+
+    document.getElementById('credito').textContent = 'R$ ' + (vendasAgregadas['CREDITO'] || 0).toFixed(2).replace('.', ',')
+    document.getElementById('credito').style.color = 'yellow'
+
+    document.getElementById('ifood').textContent = 'R$ ' + (vendasAgregadas['IFOOD'] || 0).toFixed(2).replace('.', ',')
+    document.getElementById('ifood').style.color = 'red'
+
+    const totalGeral = Object.values(vendasAgregadas).reduce((acc, val) => acc + val, 0)
+    //console.log(`Total geral (soma de todos os meios): R$ ${totalGeral.toFixed(2).replace('.', ',')}`)
+}
+
 function Loading() {
     const loading = document.getElementById('loading')
     loading.classList.toggle('ativo')
 }
 
+vendasPorMeio()
+lucrosPorDia()
 faturamentoPorDia()
 resumoSemanal()
 saudeMensal()

@@ -1,31 +1,64 @@
-  async function enviarTelegram(texto) {
+function normalizeLojas(lojas) {
+    if (!lojas) return [];           // null ou undefined
+    if (Array.isArray(lojas)) return lojas;  // já é array, mantém
+    if (typeof lojas === 'object') { 
+        // transforma objeto numerado em array plano
+        return Object.keys(lojas)
+            .sort((a,b) => Number(a) - Number(b)) // garante ordem correta
+            .map(key => lojas[key]);
+    }
+    return [];  // qualquer outro tipo inválido
+}
 
-    const lojaId = localStorage.getItem('selecaoLoja')
+async function enviarTelegram(texto) {
 
-    const token = '8675516013:AAHXcmZrXz9m0cS40GheXYhJ_fIy_dBSDCQ'
-    let chatId = ''
+    const lojaId = localStorage.getItem('selecaoLoja');
 
-    if( lojaId == 'P1Ge0XdeV9akYKUH8TV1'){
-        chatId = '8288551169'
-    } else {
-        chatId = '1611971671'
+    const token = '8742555869:AAFTCmylSRPMr0MWxutQ8wex3E_zcvR4R04';
+    let chatId = '';
+
+    const db = firebase.firestore();
+    const snapshot = await db.collection("users").get();
+
+    snapshot.forEach((doc) => {
+        const usuario = doc.data();
+
+        // normaliza lojas
+        const lojasArray = normalizeLojas(usuario.lojas);
+
+        lojasArray.forEach(loja => {
+            if (loja.idLoja !== lojaId) return;
+            console.log(usuario)
+            console.log("Loja compatível:", loja);
+            console.log("ChatID:", usuario.chatID);
+            chatId = usuario.chatID;
+        });
+    });
+
+    // valida chatId antes de enviar
+    if (!chatId) {
+        console.error("Nenhum chatId válido encontrado. Abortando envio.");
+        return;
+    }
+
+    // valida texto
+    if (!texto || typeof texto !== 'string') {
+        return;
     }
 
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
+    console.log("URL de envio:", url);
+    console.log("Payload:", { chat_id: chatId, text: texto });
 
     try {
         const resposta = await fetch(url, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                chat_id: chatId,
-                text: texto
-            })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chat_id: chatId, text: texto })
         });
 
         const dados = await resposta.json();
+        console.log("Resposta do Telegram:", dados);
         return dados;
     } catch (erro) {
         console.error("Erro ao enviar mensagem:", erro);
@@ -36,7 +69,7 @@
 async function enviarTelegramImagem(base64Image, legenda = "QR Code Pix") {
     const lojaId = localStorage.getItem('selecaoLoja')
 
-    const token = '8675516013:AAHXcmZrXz9m0cS40GheXYhJ_fIy_dBSDCQ'
+    const token = '8742555869:AAFTCmylSRPMr0MWxutQ8wex3E_zcvR4R04'
     let chatId = ''
 
     if( lojaId == 'P1Ge0XdeV9akYKUH8TV1'){
@@ -146,3 +179,4 @@ async function gerarQrCodeBase64(textoPix) {
         margin: 2
     });
 }
+

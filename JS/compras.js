@@ -383,7 +383,7 @@ async function gerarTabelaCompras() {
 async function mostrarCompras() {
   const db = firebase.firestore();
   const idLoja = localStorage.getItem('selecaoLoja')
-  const compras = await db.collection('produtos').orderBy('nome').get()
+  const compras = await db.collection('vendas').get()
 
   compras.forEach(compra => {
     const dados = compra.data();

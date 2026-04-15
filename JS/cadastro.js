@@ -44,7 +44,13 @@ function cadastrarNovoUsuario(nome, nomeLoja, email, senha) {
 
 function enviarDadosProBD(id, nome, nomeLoja, email) {
     const lojas = []
-    lojas.push({ nome: nomeLoja })
+    lojas.push({ 
+        nome: nomeLoja,
+        cargo: 'ADM',
+        chavePix: '',
+        logoIMG: '',
+        instagram: '',
+    })
 
     const dadosUsuario = {
         nome: nome,
@@ -56,11 +62,10 @@ function enviarDadosProBD(id, nome, nomeLoja, email) {
         primeiroPagamento: '',
         dataExpiracao: '',
         usuariosAdicionais: '',
-        faturamentoTotal: 0
+        faturamentoTotal: 0,
+        chatID: '',
+        planoID: 'sem plano'
     }
 
-    return firebase.firestore()
-        .collection('users')
-        .doc(id)
-        .set(dadosUsuario)
+    return firebase.firestore().collection('users').doc(id).set(dadosUsuario)
 }
