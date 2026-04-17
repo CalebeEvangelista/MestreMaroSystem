@@ -59,3 +59,10 @@
 - Atualizado script do telegram para ficar mais automatizado
 - Ajustado alguns calculos na area do financeiro pra ter a certeza que estavam corretos
 - Adicionado as áreas `Lucro por dia`, `Vendas meios de pagamento` e colocado as funções corretas em `Saúde financeira`, agora está tudo rodando tranquilo
+
+## V0.4.9
+- Resolvido completamente os bugs do pix pelo telegram
+- Ajustado o script que agora puxa diretamente do banco de dados o chatID, chavePIX e a cidade pra poder gerar o codigo pix e QRcode para envio ao telegram
+- Reformulado a aba `Minha Loja`, agora com funções diversas
+- Adicionado função de troca de chave pix e valor de taxas direto na aba `Minha loja`
+- Atualizado todo o CSS para uso do sistema de forma otimizada pelo celular

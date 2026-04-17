@@ -623,7 +623,7 @@ main section {
 }
 
 .visao {
-    display: none;
+    display: flex;
     transition: 1s ease-in;
     width: 100%;
     height: 100%;
@@ -1092,36 +1092,105 @@ tbody tr:nth-child(odd) {
 .lojas .conteudo .esquerda {
     width: 40%;
     height: 89%;
-    border-radius: 10px;
+    border-radius: 20px;
+    padding: 2em;
     display: flex;
     align-items: center;
+    justify-content: center;
     flex-direction: column;
-    padding: 1em;
-    background-color: rgba(0, 0, 0, 0.329);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(15px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.726);
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 40px rgba(0, 0, 0, 0.4);
+}
+
+.dadosLoja {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    row-gap: 0.2em;
+    margin-bottom: 1em;
+}
+
+.esquerda .logoLoja {
+    max-width: 300px;
+    margin-bottom: 1em;
+    transition: all 300ms ease-in-out;
 }
 
 .lojas .conteudo .direita {
     width: 60%;
     height: 89%;
-    border-radius: 10px;
-    display: flex;
-    padding: 1em;
-    background-color: rgba(0, 0, 0, 0.329);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(15px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.726);
+    border-radius: 20px;
+    padding: 2em;
     margin-left: 1em;
-} 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 40px rgba(0, 0, 0, 0.4);
+}
 
-.lojas .conteudo .esquerda .dadosLoja {
-    background-color: var(--backgroundBlur2);
+.lojas .conteudo .direita .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.2em;
     width: 100%;
-    height: 20%;
+    height: 100%;
+}
+
+.lojas .conteudo .direita .grid label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 1.2em;
+    border-radius: 16px;
+    font-size: 15px;
+    font-weight: 400;
+    color: rgb(255, 255, 255);
+    letter-spacing: 0.3px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
+    transition: background 300ms ease;
+}
+
+.lojas .conteudo .direita .grid label:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.lojas .conteudo .direita .grid label p {
+    margin-top: 0.3em;
+    font-size: 13px;
+    color: rgb(255, 255, 255);
+    letter-spacing: 0.2px;
+}
+
+.lojas .conteudo .direita .grid label button {
     margin-top: 1em;
-    border-radius: 10px;
+    width: 110px;
+    height: 28px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    color: rgba(0, 0, 0, 0.8);
+    background: rgba(255, 247, 0, 0.85);
+    box-shadow: 0 2px 12px rgba(255, 247, 0, 0.2);
+    transition: all 250ms ease;
+}
+
+.lojas .conteudo .direita .grid label button:hover {
+    transform: scale(1.05);
+    background: rgba(255, 247, 0, 1);
+    box-shadow: 0 4px 20px rgba(255, 247, 0, 0.35);
 }
 
 .selecionarLoja {
@@ -1199,7 +1268,7 @@ tbody tr:nth-child(odd) {
 }
 
 .financeiro {
-    display: flex;
+    display: none;
     flex-direction: column;
     padding: 1em;
 }
@@ -1919,3 +1988,442 @@ tbody tr:nth-child(odd) {
     transition: all 0.4s ease-in-out;
 }
 
+/* ===========================
+   RESPONSIVO - MOBILE
+   =========================== */
+
+@media (max-width: 768px) {
+
+    /* TRAVA O OVERFLOW HORIZONTAL */
+    html, body {
+        max-width: 100vw;
+        overflow-x: hidden;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    #compras, #produtos, #clientes, #lojas {
+        display: none;
+    }
+
+    /* BODY */
+    body {
+        height: auto;
+        min-height: 100vh;
+        text-align: center;
+    }
+
+    /* HEADER */
+    header {
+        height: auto;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 0.8em 0.5em;
+        gap: 0.4em;
+        position: relative;
+    }
+
+    header img {
+        width: 50%;
+        position: static;
+        margin-bottom: 0.5em;
+    }
+
+    header .itemCategoria {
+        width: 4em;
+        height: 60px;
+        font-size: 11px;
+        margin-right: 0.2em;
+    }
+
+    header .itemCategoria p {
+        display: none;
+    }
+
+    .itemCategoria i {
+        font-size: 22px;
+    }
+
+    header .infosUser {
+        position: static;
+        width: 70px;
+        height: 36px;
+        font-size: 13px;
+        margin-top: 0.3em;
+    }
+
+    header .selecaoLoja {
+        position: static;
+        width: 70px;
+        height: 36px;
+        font-size: 13px;
+        margin-top: 0.3em;
+    }
+
+    /* MAIN */
+    main {
+        width: 100%;
+        height: auto;
+        min-height: 85vh;
+        border-radius: 0;
+        padding-bottom: 2em;
+        justify-content: start;
+    }
+
+    main section {
+        margin-top: 1em;
+        padding: 0 0.5em;
+    }
+
+    /* ===== VISÃO GERAL ===== */
+    #visaoCima {
+        flex-direction: column;
+        height: auto;
+        align-items: center;
+        gap: 1em;
+    }
+
+    #visaoCima .balancoDia,
+    #visaoCima .balancoMes,
+    #visaoCima .visaoDia {
+        width: 95%;
+        height: auto;
+        padding: 1em;
+        margin-right: 0;
+    }
+
+    #visaoBaixo {
+        flex-direction: column;
+        height: auto;
+        align-items: center;
+        gap: 1em;
+        margin-top: 1em;
+    }
+
+    #visaoBaixo div {
+        width: 95%;
+        height: auto;
+        min-height: 200px;
+        margin-right: 0;
+    }
+
+    /* ===== PDV MOBILE ===== */
+    .pdv {
+        padding: 0.5em;
+        width: 95%;
+        height: 60vh;
+        align-items: center;
+    }
+
+    .pdv input#produto {
+        font-size: 16px;
+        height: 45px;
+        width: 90%;
+        border-radius: 8px;
+        padding-left: 0.8em;
+    }
+
+    .tableContainer {
+        width: 90%;
+        max-height: 15vh;
+        overflow-x: auto;
+        overflow-y: auto;
+        margin-top: 0.5em;
+    }
+
+    .tabela-pdv {
+        font-size: 11px;
+        width: 100%;
+    }
+
+    .tabela-pdv th, .tabela-pdv td {
+        padding: 4px 6px;
+    }
+
+    .somas {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5em;
+        padding: 0.5em 0;
+        margin-top: 0.5em;
+        align-items: center;
+    }
+
+    .somas .campo {
+        width: 90%;
+        grid-column: span 6; /* CORRIGIDO: era span 6 */
+    }
+
+    .somas .campo input {
+        width: 90% !important;
+        font-size: 15px;
+        height: 42px;
+        border-radius: 8px;
+        text-align: left;
+    }
+
+    #ValorTotalDaVenda {
+        grid-column: span 2;
+        height: auto;
+        width: 100%;
+    }
+
+    .somasTotais {
+        width: 100%;
+        height: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3em;
+    }
+
+    .somasTotais input {
+        width: 100% !important;
+        height: 42px;
+        font-size: 22px !important;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    #prefixoPercent, #prefixoAVista {
+        position: static;
+        font-size: 11px;
+        color: rgba(255,255,255,0.5);
+        align-self: flex-start;
+        margin: 0;
+    }
+
+    .prefixo {
+        left: 8px !important;
+    }
+
+    #addItem, #cancelarVenda, #finalizarVenda {
+        height: 70px;
+        width: 50px !important;
+    }
+
+    /* ===== PAGAMENTO ===== */
+    .pagamento {
+        padding: 0.5em;
+    }
+
+    .telaPagamento {
+        width: 100%;
+        height: auto;
+        padding: 1em 0.5em;
+        border-radius: 10px;
+    }
+
+    .telaPagamento h1 {
+        font-size: 24px;
+    }
+
+    .telaPagamento input {
+        width: 95%;
+        font-size: 13px;
+    }
+
+    .meiosPagamento,
+    .acrescimosDescontos,
+    .totais,
+    .cashback {
+        width: 95%;
+        overflow-x: auto;
+    }
+
+    .meiosPagamento table,
+    .acrescimosDescontos table,
+    .totais table,
+    .cashback table {
+        font-size: 13px;
+    }
+
+    .totalVenda {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5em;
+    }
+
+    .totalVenda h2 {
+        font-size: 20px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .totalVenda input {
+        width: 45%;
+        font-size: 22px;
+        margin: 0;
+    }
+
+    .totalVenda button {
+        width: 50px !important;
+        height: 45px;
+        font-size: 18px;
+        margin: 0;
+    }
+
+    .generatePix {
+        position: static;
+        width: 40px;
+        height: 28px;
+        margin-left: 0.3em;
+    }
+
+    /* ===== PRODUTOS ===== */
+    .produtos {
+        overflow-x: auto;
+    }
+
+    .tableContainer table {
+        width: 100%;
+        font-size: 12px;
+    }
+
+    .produtos #addProds,
+    .produtos #conferirProds {
+        font-size: 36px;
+        width: 60px;
+        height: 60px;
+        right: 15px;
+        bottom: 15px;
+    }
+
+    .produtos #conferirProds {
+        bottom: 85px;
+    }
+
+    /* ===== CLIENTES ===== */
+    .clientes table {
+        width: 100%;
+        font-size: 12px;
+    }
+
+    /* ===== FINANCEIRO ===== */
+    .financeiro {
+        padding: 0.5em;
+    }
+
+    .financeiroCima,
+    .financeiroBaixo {
+        flex-direction: column;
+        height: auto;
+        align-items: center;
+        gap: 1em;
+    }
+
+    .resumoSemanal {
+        display: none;
+    }
+
+    .resumoMes,
+    .verFaturamento,
+    .lucroPorDia,
+    .vendasMeios {
+        width: 95%;
+        height: auto;
+        padding: 1em;
+    }
+
+    .financeiroBaixo .lucroPorDia,
+    .financeiroBaixo .vendasMeios {
+        width: 95%;
+        margin-left: 0 !important;
+    }
+
+    #grafico {
+        height: 220px;
+    }
+
+    /* ===== LOJAS ===== */
+    .lojas .conteudo {
+        flex-direction: column;
+        width: 100%;
+        gap: 1em;
+    }
+
+    .lojas .conteudo .esquerda,
+    .lojas .conteudo .direita {
+        width: 95%;
+        height: auto;
+        margin-left: 0;
+        padding: 1.2em;
+    }
+
+    .lojas .conteudo .direita .grid {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    .lojas .conteudo .direita .grid label {
+        height: auto;
+        padding: 1em;
+    }
+
+    .esquerda .logoLoja {
+        max-width: 180px;
+    }
+
+    /* ===== SELECIONAR LOJA ===== */
+    .lojasSelecao {
+        width: 95%;
+        grid-template-columns: 1fr;
+        gap: 1.5em;
+    }
+
+    .lojasSelecao label {
+        font-size: 18px;
+        height: 120px;
+    }
+
+    /* ===== COMPRAS ===== */
+    .compras table {
+        width: 100%;
+        font-size: 12px;
+    }
+
+    .compras i {
+        font-size: 28px;
+        width: 60px;
+        height: 60px;
+        right: 15px;
+        bottom: 15px;
+    }
+
+    /* ===== SWAL (MODAIS) ===== */
+    .swal-add-produto-popup,
+    .swal-edit-produto-popup {
+        width: calc(100vw - 16px) !important;
+    }
+
+    .swal-add-produto-grid-2,
+    .swal-add-produto-grid-4,
+    .swal-edit-produto-grid-2,
+    .swal-edit-produto-grid-4 {
+        grid-template-columns: 1fr !important;
+    }
+
+    .swal-venda-topo {
+        grid-template-columns: 1fr;
+    }
+
+    .swal-venda-topo > :nth-child(3) {
+        grid-column: span 1;
+    }
+
+    .input-swal {
+        width: 100%;
+        margin-bottom: 0.5em;
+    }
+
+    /* ===== TABELAS GERAIS ===== */
+    table {
+        font-size: 12px;
+    }
+
+    td, th {
+        padding: 5px;
+    }
+}

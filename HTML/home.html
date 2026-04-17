@@ -355,14 +355,14 @@
                             </tr>
                             <tr>
                                 <td>PIX</td>
-                                <td>
+                                <td id="generatePix">
                                     <input
                                         type="text"
                                         class="valorPagamento"
                                         data-tipo="PIX"
                                         placeholder="R$ 0,00"
                                     >
-                                    <button class="generatePix" onclick="pix()">
+                                    <button class="generatePix"  onclick="pix()">
                                         <i class="fa-solid fa-arrows-rotate"></i>
                                     </button>
                                 </td>
@@ -605,25 +605,37 @@
             <hr>
             <div class="conteudo">
                 <div class="esquerda">
-                    <h2>Esquenta do Povo - Unidade 1</h2>
+                    <img src="/IMAGENS/LOGO HORIZONTAL.png" class="logoLoja">
+                    <h2 id="nomeLoja">-</h2>
+                    <hr>
                     <div class="dadosLoja">
                         <p>Endereço: Rua da república, 227A - Centenário | Campina Grande/PB</p>
                         <p>Responsável: Calebe Evangelista</p>
+                        <p>CNPJ: 42.193.719/0001-36</p>
                     </div>
-                    <div class="funcionarios">
-                        
-                    </div>
+                    <label class="funcionarios">
+                        <p>Funcionários cadastrados:</p>
+                    </label>
                 </div>
                 <div class="direita">
-                    <div class="taxas">
-                        <p>Taxas de pagamento:</p>
-                        <p>Crédito: 2,99%</p>
-                        <p>Débito: 1,99%</p>
-                        <p>IFOOD: 28,35%</p>
+                    <h2>Informações gerais</h2>
+                    <hr>
+                    <div class="grid">
+                        <label>
+                            <p>Taxas de pagamento:</p>
+                            <p id="taxaCredito">Crédito: -%</p>
+                            <p id="taxaDebito">Débito: -%</p>
+                            <p id="taxaIfood">IFOOD: -%</p>
+                            <button id="editarTaxas">Editar taxas</button>
+                        </label>
+                        <label>
+                            <p>Dados financeiros:</p>
+                            <p id="chavePixSpace">Chave Pix: -</p>
+                            <button onclick="editarPix()">Editar chave</button>
+                        </label>
                     </div>
-                    <div class="funcionarios">
-                        <p>Funcionários cadastrados:</p>
-                    </div>
+                    
+                    
                 </div>
             </div>
             

@@ -458,13 +458,6 @@ async function vendasPorMeio() {
         const totalVenda = Number(venda.totalVenda || 0)
         const meios = venda.meiosPagamento || []
 
-        // Log de divergência detalhado
-        const somaMeios = meios.reduce((acc, m) => acc + Number(m.valor || 0), 0)
-        if (Math.abs(somaMeios - totalVenda) > 0.01) {
-            const detalhesMeios = meios.map(m => `${m.tipoPagamento}: ${m.valor}`).join(' | ')
-            console.warn(`Divergência na venda ${doc.id}: totalVenda=${totalVenda}, somaMeios=${somaMeios.toFixed(2)}, diferença=${(somaMeios - totalVenda).toFixed(2)} — Meios: ${detalhesMeios}`)
-        }
-
         // Soma de todos os meios não-dinheiro desta venda
         const totalOutrosMeios = meios
             .filter(m => m.tipoPagamento !== 'DINHEIRO')

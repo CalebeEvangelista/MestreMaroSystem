@@ -1,104 +1,23 @@
-function normalizeLojas(lojas) {
-    if (!lojas) return [];           // null ou undefined
-    if (Array.isArray(lojas)) return lojas;  // já é array, mantém
-    if (typeof lojas === 'object') { 
-        // transforma objeto numerado em array plano
-        return Object.keys(lojas)
-            .sort((a,b) => Number(a) - Number(b)) // garante ordem correta
-            .map(key => lojas[key]);
-    }
-    return [];  // qualquer outro tipo inválido
-}
+let dadosLoja = []
 
-async function enviarTelegram(texto) {
-
-    const lojaId = localStorage.getItem('selecaoLoja');
-
-    const token = '8742555869:AAFTCmylSRPMr0MWxutQ8wex3E_zcvR4R04';
-    let chatId = '';
+async function guardarDados() {
+    const idLoja = localStorage.getItem('selecaoLoja')
 
     const db = firebase.firestore();
-    const snapshot = await db.collection("users").get();
+    const snapshot = await db.collection('lojas').where('id', '==', idLoja).get()
 
-    snapshot.forEach((doc) => {
-        const usuario = doc.data();
+    const loja = snapshot.docs[0].data();
 
-        // normaliza lojas
-        const lojasArray = normalizeLojas(usuario.lojas);
+    const nomeLoja = loja.nome.split(' ')
 
-        lojasArray.forEach(loja => {
-            if (loja.idLoja !== lojaId) return;
-            console.log(usuario)
-            console.log("Loja compatível:", loja);
-            console.log("ChatID:", usuario.chatID);
-            chatId = usuario.chatID;
-        });
-    });
+    dadosLoja.push({
+        nome: nomeLoja[0],
+        chavePix: loja.chavePix,
+        cidade: loja.cidade,
+        chatID: loja.chatID
+    })
 
-    // valida chatId antes de enviar
-    if (!chatId) {
-        console.error("Nenhum chatId válido encontrado. Abortando envio.");
-        return;
-    }
-
-    // valida texto
-    if (!texto || typeof texto !== 'string') {
-        return;
-    }
-
-    const url = `https://api.telegram.org/bot${token}/sendMessage`;
-    console.log("URL de envio:", url);
-    console.log("Payload:", { chat_id: chatId, text: texto });
-
-    try {
-        const resposta = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ chat_id: chatId, text: texto })
-        });
-
-        const dados = await resposta.json();
-        console.log("Resposta do Telegram:", dados);
-        return dados;
-    } catch (erro) {
-        console.error("Erro ao enviar mensagem:", erro);
-        throw erro;
-    }
-}
-
-async function enviarTelegramImagem(base64Image, legenda = "QR Code Pix") {
-    const lojaId = localStorage.getItem('selecaoLoja')
-
-    const token = '8742555869:AAFTCmylSRPMr0MWxutQ8wex3E_zcvR4R04'
-    let chatId = ''
-
-    if( lojaId == 'P1Ge0XdeV9akYKUH8TV1'){
-        chatId = '8288551169'
-    } else {
-        chatId = '1611971671'
-    }
-
-    const url = `https://api.telegram.org/bot${token}/sendPhoto`;
-
-    try {
-        const formData = new FormData();
-        formData.append("chat_id", chatId);
-        formData.append("caption", legenda);
-
-        const blob = await (await fetch(base64Image)).blob();
-        formData.append("photo", blob, "qrcode-pix.png");
-
-        const resposta = await fetch(url, {
-            method: "POST",
-            body: formData
-        });
-
-        const dados = await resposta.json();
-        return dados;
-    } catch (erro) {
-        console.error("Erro ao enviar imagem:", erro);
-        throw erro;
-    }
+    console.log(dadosLoja)
 }
 
 //GERA O PIX E ENVIA A IMAGEM E CODIGO NO TELEGRAM
@@ -121,9 +40,9 @@ async function gerarPixEEnviarTelegram(valor) {
 }
 
 function gerarPix(valor) {
-    const chave = "42193719000136";
-    const nome = "ESQUENTA DO POVO";
-    const cidade = "CAMPINA GRANDE";
+    const chave = dadosLoja[0].chavePix
+    const nome = dadosLoja[0].nome.toUpperCase()
+    const cidade = dadosLoja[0].cidade.toUpperCase()
 
     function format(id, value) {
         const v = String(value);
@@ -180,3 +99,97 @@ async function gerarQrCodeBase64(textoPix) {
     });
 }
 
+function normalizeLojas(lojas) {
+    if (!lojas) return [];           // null ou undefined
+    if (Array.isArray(lojas)) return lojas;  // já é array, mantém
+    if (typeof lojas === 'object') { 
+        // transforma objeto numerado em array plano
+        return Object.keys(lojas)
+            .sort((a,b) => Number(a) - Number(b)) // garante ordem correta
+            .map(key => lojas[key]);
+    }
+    return [];  // qualquer outro tipo inválido
+}
+
+async function enviarTelegram(texto) {
+
+    const lojaId = localStorage.getItem('selecaoLoja');
+
+    const token = '8742555869:AAFTCmylSRPMr0MWxutQ8wex3E_zcvR4R04';
+    let chatId = '';
+    let chavePix = ''
+
+    const db = firebase.firestore();
+    const snapshot = await db.collection("users").get();
+
+    snapshot.forEach((doc) => {
+        const usuario = doc.data();
+
+        // normaliza lojas
+        const lojasArray = normalizeLojas(usuario.lojas);
+
+        lojasArray.forEach(loja => {
+            if (loja.idLoja !== lojaId) return;
+            chatId = dadosLoja[0].chatID;
+            chavePix = usuario.pix
+        });
+    });
+
+    // valida chatId antes de enviar
+    if (!chatId) {
+        console.error("Nenhum chatId válido encontrado. Abortando envio.");
+        return;
+    }
+
+    // valida texto
+    if (!texto || typeof texto !== 'string') {
+        return;
+    }
+
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
+
+    try {
+        const resposta = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chat_id: chatId, text: texto })
+        });
+
+        const dados = await resposta.json();
+        return dados;
+    } catch (erro) {
+        console.error("Erro ao enviar mensagem:", erro);
+        throw erro;
+    }
+}
+
+async function enviarTelegramImagem(base64Image, legenda = "QR Code Pix") {
+    const lojaId = localStorage.getItem('selecaoLoja')
+
+    const token = '8742555869:AAFTCmylSRPMr0MWxutQ8wex3E_zcvR4R04'
+    let chatId = dadosLoja[0].chatID
+
+    const url = `https://api.telegram.org/bot${token}/sendPhoto`;
+
+    try {
+        const formData = new FormData();
+        formData.append("chat_id", chatId);
+        formData.append("caption", legenda);
+
+        const blob = await (await fetch(base64Image)).blob();
+        formData.append("photo", blob, "qrcode-pix.png");
+
+        const resposta = await fetch(url, {
+            method: "POST",
+            body: formData
+        });
+
+        const dados = await resposta.json();
+        return dados;
+    } catch (erro) {
+        console.error("Erro ao enviar imagem:", erro);
+        throw erro;
+    }
+}
+
+guardarDados()

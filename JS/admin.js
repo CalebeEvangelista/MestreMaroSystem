@@ -55,6 +55,7 @@ async function completeInfos() {
     }
 
     const tr = document.createElement('tr')
+    tr.setAttribute('id', user.id)
 
     const nomeTd = document.createElement('td')
     nomeTd.textContent = user.nome
@@ -70,7 +71,7 @@ async function completeInfos() {
 
     const statusTd = document.createElement('td')
     const statusReal = document.createElement('span')
-    statusReal.textContent = user.status || 'S/ Status'
+    statusReal.textContent = user.status.toUpperCase() || 'S/ Status'
     statusReal.classList.add('status')
 
     if (user.status == 'ativo') {
@@ -84,9 +85,17 @@ async function completeInfos() {
     statusTd.appendChild(statusReal)
     tr.appendChild(statusTd)
 
-    const vencimentoTd = document.createElement('td')
-    vencimentoTd.textContent = user.vencimento || '00/00'
-    tr.appendChild(vencimentoTd)
+    const vencimentoTd = document.createElement('td');
+
+    const data = user.dataExpiracao
+      ? new Date(user.dataExpiracao.seconds * 1000)
+      : null;
+
+    vencimentoTd.textContent = data && !isNaN(data.getTime())
+      ? data.toLocaleDateString('pt-BR')
+      : '00/00/0000';
+
+    tr.appendChild(vencimentoTd);
 
     const faturamentoTd = document.createElement('td')
     const faturamentoUser = user.faturamento || 0
@@ -138,6 +147,38 @@ async function editarUsuario(userId) {
     { email: 'teste@teste.com', nome: 'Adicional 1' },
     { email: 'teste2@teste.com', nome: 'Adicional 2' }
   ];
+
+  let dataExpiracao = '';
+
+  const data = user.dataExpiracao
+    ? new Date(user.dataExpiracao.seconds * 1000)
+    : null;
+
+  if (data && !isNaN(data.getTime())) {
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const dia = String(data.getDate()).padStart(2, '0');
+
+    dataExpiracao = `${ano}-${mes}-${dia}`;
+  } else {
+    dataExpiracao = '';
+  }
+
+   let primeiroPagamento = '';
+
+  const data2 = user.primeiroPagamento
+    ? new Date(user.primeiroPagamento.seconds * 1000)
+    : null;
+
+  if (data2 && !isNaN(data2.getTime())) {
+    const ano = data2.getFullYear();
+    const mes = String(data2.getMonth() + 1).padStart(2, '0');
+    const dia = String(data2.getDate()).padStart(2, '0');
+
+    primeiroPagamento = `${ano}-${mes}-${dia}`;
+  } else {
+    primeiroPagamento = '';
+  }
 
   Swal.fire({
     customClass: {
@@ -193,16 +234,15 @@ async function editarUsuario(userId) {
 
             <label>Status</label>
             <select id="swal-status">
-              <option value="Pendente aprovação" ${user.status === 'Pendente aprovação' ? 'selected' : ''}>Pendente aprovação</option>
-              <option value="Ativo" ${user.status === 'Ativo' ? 'selected' : ''}>Ativo</option>
-              <option value="Inativo" ${user.status === 'Inativo' ? 'selected' : ''}>Inativo</option>
+              <option value="Ativo" ${user.status === 'ativo' ? 'selected' : ''}>Ativo</option>
+              <option value="Inativo" ${user.status === 'inativo' ? 'selected' : ''}>Inativo</option>
             </select>
 
             <label>Primeiro Pagamento</label>
-            <input type="date" id="swal-primeiroPagamento" value="${user.primeiroPagamento || ''}">
+            <input type="date" id="swal-primeiroPagamento" value="${primeiroPagamento || ''}" readonly>
 
             <label>Data de Expiração</label>
-            <input type="date" id="swal-dataExpiracao" value="${user.dataExpiracao || ''}">
+            <input type="date" id="swal-dataExpiracao" value="${dataExpiracao}" readonly>
           </div>
         </div>
       </div>
