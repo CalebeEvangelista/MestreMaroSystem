@@ -212,9 +212,27 @@ td {
   transform: scale(1.05);
 }
 
+.btn.aprovar {
+  background: #00ff22;
+  color: #000;
+}
+
 .btn.edit {
   background: #ffd600;
   color: #000;
+}
+
+.btn.exc {
+  background: #ff0000;
+  color: #000;
+}
+
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
 }
 
 /* ==================== RESPONSIVIDADE ==================== */

@@ -16,8 +16,6 @@ async function guardarDados() {
         cidade: loja.cidade,
         chatID: loja.chatID
     })
-
-    console.log(dadosLoja)
 }
 
 //GERA O PIX E ENVIA A IMAGEM E CODIGO NO TELEGRAM
@@ -116,7 +114,7 @@ async function enviarTelegram(texto) {
     const lojaId = localStorage.getItem('selecaoLoja');
 
     const token = '8742555869:AAFTCmylSRPMr0MWxutQ8wex3E_zcvR4R04';
-    let chatId = '';
+    let chatId = ''
     let chavePix = ''
 
     const db = firebase.firestore();

@@ -66,3 +66,16 @@
 - Reformulado a aba `Minha Loja`, agora com funções diversas
 - Adicionado função de troca de chave pix e valor de taxas direto na aba `Minha loja`
 - Atualizado todo o CSS para uso do sistema de forma otimizada pelo celular
+
+## V0.5.0
+- Adicionado página de obrigado para redirecionamento assim que a ssinatura for concluida.
+- Adicionado página da campanha de 3 meses gratis e todo o codigo pra ela funcionar
+- Reformulada a função de adicionar nova loja
+
+## V0.5.1
+- Colocado função de abertura de caixa
+- Colocado resumo de botões na parte do PDV
+- Colocado função de resumo e fechamento de caixa apertando a tecla F8
+- Feito algumas correções na função `atualizarEstoque` para validar corretamente que ta subtraindo o estoque
+- Colocado função que ao cancelar uma venda ele volta o estoque do produto que estava na venda
+- Colocado uma aba nova de preço de compra do produto na aba Produtos para melhor vizualização na hora de conferir

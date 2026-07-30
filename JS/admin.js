@@ -1,19 +1,22 @@
 function openScreen(event, screenId) {
-
-  // troca tela
   document.querySelectorAll('.screen').forEach(screen => {
     screen.classList.remove('active');
   });
 
-  document.getElementById(screenId).classList.add('active');
+  const targetScreen = document.getElementById(screenId);
+  if (targetScreen) {
+    targetScreen.classList.add('active');
+  }
 
-  // ativa menu
   document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.remove('active');
   });
 
-  event.currentTarget.classList.add('active');
+  if (event && event.currentTarget) {
+    event.currentTarget.classList.add('active');
+  }
 }
+
 
 function voltarSistema() {
     window.location.href = '/HTML/home.html';
@@ -263,4 +266,124 @@ async function editarUsuario(userId) {
   });
 }
 
+async function carregarTabelaPromocional() {
+  const tbody = document.getElementById('tabelaPromocional');
+  const db = firebase.firestore();
+
+  tbody.innerHTML = '';
+
+  try {
+    const snapshot = await db.collection('promocional').orderBy('criadoEm').get();
+
+    if (snapshot.empty) {
+      tbody.innerHTML = `<tr><td colspan="6">Nenhum cadastro encontrado.</td></tr>`;
+      return;
+    }
+
+    snapshot.forEach(doc => {
+      const d = doc.data();
+
+      console.log(d)
+
+      if (d.faturamento == '') return
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${d.nome || '-'}</td>
+        <td>${d.cidade || '-'} / ${d.estado || '-'}</td>
+        <td>${d.loja || '-'}</td>
+        <td>${d.segmento || '-'}</td>
+        <td>${d.faturamento || '-'}</td>
+        <td>
+          <button class="btn aprovar">Aprovar</button>
+          <button class="btn edit recusar">Recusar</button>
+          <button class="btn exc excluir">Excluir</button>
+        </td>
+      `;
+
+      tr.querySelector('.aprovar').onclick = async () => {
+        await db.collection('promocional').doc(doc.id).update({
+          status: 'aprovado'
+        });
+      };
+
+      tr.querySelector('.recusar').onclick = async () => {
+        await db.collection('promocional').doc(doc.id).update({
+          status: 'recusado'
+        });
+      };
+
+      tr.querySelector('.excluir').onclick = async () => {
+        const telaAtual = document.querySelector('.screen.active')?.id || 'dashboard';
+
+        const resultado = await Swal.fire({
+          title: 'Tem certeza?',
+          text: 'Esse cadastro será excluído permanentemente.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Sim, excluir',
+          cancelButtonText: 'Cancelar'
+        });
+
+        if (!resultado.isConfirmed) return;
+
+        try {
+          await db.collection('promocional').doc(doc.id).delete();
+
+          localStorage.setItem('telaAdminAtual', telaAtual);
+          window.location.reload();
+        } catch (erro) {
+          console.error('Erro ao excluir:', erro);
+
+          Swal.fire({
+            icon: 'error',
+            title: 'Erro ao excluir',
+            text: 'Não foi possível excluir esse cadastro.'
+          });
+        }
+      };
+
+      tbody.appendChild(tr);
+    });
+
+  } catch (erro) {
+    console.error('Erro ao carregar promocionais:', erro);
+    tbody.innerHTML = `<tr><td colspan="6">Erro ao carregar dados.</td></tr>`;
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const telaSalva = localStorage.getItem('telaAdminAtual');
+  if (!telaSalva) return;
+
+  document.querySelectorAll('.screen').forEach(screen => {
+    screen.classList.remove('active');
+  });
+
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.remove('active');
+  });
+
+  const tela = document.getElementById(telaSalva);
+  if (tela) {
+    tela.classList.add('active');
+  }
+
+  const mapaBotoes = {
+    dashboard: 'dashboardButton',
+    assinantes: 'assinantesButton',
+    vencimentos: 'vencimentosButton',
+    faturamentoTela: 'faturamentoButton',
+    promocional: 'promocionalButton'
+  };
+
+  const botao = document.getElementById(mapaBotoes[telaSalva]);
+  if (botao) {
+    botao.classList.add('active');
+  }
+
+  localStorage.removeItem('telaAdminAtual');
+});
+
 completeInfos()
+carregarTabelaPromocional()

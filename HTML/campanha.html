@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/IMAGENS/favicon.png" type="image/png">
+  <title>Campanha 3 meses grátis MestreMaro</title>
+  <meta
+    name="description"
+    content="Cadastre sua loja para participar da campanha de 3 meses grátis do MestreMaro."
+  />
+  <link rel="stylesheet" href="/CSS/cadastro-campanha.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="container nav">
+      <a href="/" class="brand">
+        <img src="/IMAGENS/logo mestre maro.png" alt="Logo MestreMaro" class="brand-logo" />
+      </a>
+
+      <a href="/login" class="btn btn-outline">Fazer login</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="campaign-hero">
+      <div class="container campaign-grid">
+        <div class="campaign-copy">
+          <span class="badge">Oferta especial por tempo limitado</span>
+          <h1>Campanha 3 meses grátis MestreMaro</h1>
+          <p>
+            Preencha o formulário para solicitar sua análise e participar da campanha.
+            Queremos entender melhor sua operação para indicar a melhor estrutura do sistema
+            para sua loja.
+          </p>
+
+          <div class="info-cards">
+            <article class="info-card">
+              <strong>3 meses grátis</strong>
+              <span>Comece a usar o sistema sem custo no período promocional.</span>
+            </article>
+
+            <article class="info-card">
+              <strong>Análise rápida</strong>
+              <span>Entendemos sua operação para direcionar a configuração ideal.</span>
+            </article>
+
+            <article class="info-card">
+              <strong>Foco no seu negócio</strong>
+              <span>Conveniências, adegas, distribuidoras e mercadinhos.</span>
+            </article>
+          </div>
+        </div>
+
+        <div class="form-panel">
+          <div class="form-card">
+            <div class="form-head">
+              <small>Cadastro de interesse</small>
+              <h2>Solicite sua participação</h2>
+              <p>Preencha seus dados e as informações da sua operação.</p>
+            </div>
+
+            <form class="campaign-form">
+              <div class="form-grid">
+                <div class="field full">
+                  <label for="nome">Nome completo</label>
+                  <input type="text" id="nome" name="nome" placeholder="Seu nome completo" required />
+                </div>
+
+                <div class="field">
+                  <label for="telefone">Telefone / WhatsApp</label>
+                  <input type="tel" id="telefone" name="telefone" placeholder="(00) 00000-0000" required />
+                </div>
+
+                <div class="field">
+                  <label for="email">E-mail</label>
+                  <input type="email" id="email" name="email" placeholder="seuemail@exemplo.com" required />
+                </div>
+
+                <div class="field full">
+                  <label for="loja">Nome da loja</label>
+                  <input type="text" id="loja" name="loja" placeholder="Nome da sua loja" required />
+                </div>
+
+                <div class="field full">
+                  <label for="endereco">Endereço da loja</label>
+                  <input type="text" id="endereco" name="endereco" placeholder="Rua, número, bairro" required />
+                </div>
+
+                <div class="field">
+                  <label for="cidade">Cidade</label>
+                  <input type="text" id="cidade" name="cidade" placeholder="Sua cidade" required />
+                </div>
+
+                <div class="field field-uf">
+                  <label for="estado">Estado</label>
+                  <select id="estado" name="estado" required>
+                    <option value="" selected disabled>Selecione</option>
+                    <option>AC</option>
+                    <option>AL</option>
+                    <option>AP</option>
+                    <option>AM</option>
+                    <option>BA</option>
+                    <option>CE</option>
+                    <option>DF</option>
+                    <option>ES</option>
+                    <option>GO</option>
+                    <option>MA</option>
+                    <option>MT</option>
+                    <option>MS</option>
+                    <option>MG</option>
+                    <option>PA</option>
+                    <option>PB</option>
+                    <option>PR</option>
+                    <option>PE</option>
+                    <option>PI</option>
+                    <option>RJ</option>
+                    <option>RN</option>
+                    <option>RS</option>
+                    <option>RO</option>
+                    <option>RR</option>
+                    <option>SC</option>
+                    <option>SP</option>
+                    <option>SE</option>
+                    <option>TO</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="segmento">Segmento principal</label>
+                  <select id="segmento" name="segmento" required>
+                    <option value="" selected disabled>Selecione</option>
+                    <option>Conveniência</option>
+                    <option>Adega</option>
+                    <option>Distribuidora de bebidas</option>
+                    <option>Mercadinho</option>
+                    <option>Outro</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="funcionarios">Quantidade de funcionários</label>
+                  <select id="funcionarios" name="funcionarios" required>
+                    <option value="" selected disabled>Selecione</option>
+                    <option>1 a 3</option>
+                    <option>4 a 7</option>
+                    <option>8 a 15</option>
+                    <option>16 a 30</option>
+                    <option>Mais de 30</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="operacao">Tamanho da operação</label>
+                  <select id="operacao" name="operacao" required>
+                    <option value="" selected disabled>Selecione</option>
+                    <option>Pequena</option>
+                    <option>Média</option>
+                    <option>Grande</option>
+                    <option>Mais de uma unidade</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="faturamento">Faturamento médio mensal</label>
+                  <select id="faturamento" name="faturamento" required>
+                    <option value="" selected disabled>Selecione</option>
+                    <option value="20k">Até R$ 20 mil</option>
+                    <option value="20k-50k">De R$ 20 mil a R$ 50 mil</option>
+                    <option value="50k-100k">De R$ 50 mil a R$ 100 mil</option>
+                    <option value="100k-300k">De R$ 100 mil a R$ 300 mil</option>
+                    <option value="+300k">Acima de R$ 300 mil</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="vendas">Média de vendas por dia</label>
+                  <select id="vendas" name="vendas" required>
+                    <option value="" selected disabled>Selecione</option>
+                    <option>Até 30 vendas</option>
+                    <option>31 a 80 vendas</option>
+                    <option>81 a 150 vendas</option>
+                    <option>151 a 300 vendas</option>
+                    <option>Mais de 300 vendas</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="sistema">Já utiliza algum sistema hoje?</label>
+                  <select id="sistema" name="sistema" required>
+                    <option value="" selected disabled>Selecione</option>
+                    <option value="S/ Sistema">Não uso sistema</option>
+                    <option value="Planilhas">Uso planilhas / controle manual</option>
+                    <option value="Outro Sistema">Uso outro sistema</option>
+                    <option value="Troca de sistema">Estou trocando de sistema</option>
+                  </select>
+                </div>
+
+                <div class="field full">
+                  <label for="desafio">Principal desafio da sua operação hoje</label>
+                  <textarea
+                    id="desafio"
+                    name="desafio"
+                    rows="4"
+                    placeholder="Ex.: controle de estoque, agilidade no caixa, relatórios, financeiro, multi-loja..."
+                    required
+                  ></textarea>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary submit-btn">Quero participar da campanha</button>
+              <p class="form-note">
+                É obrigatório preencher todos os campos do formulário para participar da campanha.
+              </p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-storage-compat.js"></script>
+  <script src="/JS/firebase-init.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="/JS/cadastro-campanha.js"></script>
+</body>
+</html>

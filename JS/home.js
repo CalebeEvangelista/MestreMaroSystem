@@ -221,30 +221,37 @@ async function atualizarEstoque(produtos, loja) {
             .where('idLoja', '==', loja)
             .get();
 
-        snapshot.forEach(doc => {
+        const updates = [];
 
+        snapshot.forEach(doc => {
             const dado = doc.data();
             const idProduto = doc.id;
 
             produtos.forEach(produto => {
+                const mesmoId = produto.idProduto && produto.idProduto === idProduto;
+                const mesmoNome = produto.nome?.trim().toLowerCase() === dado.nome?.trim().toLowerCase();
 
-                if (produto.nome === dado.nome) {
-
-                    const qtdVendida = produto.quantidade;
-                    const estoqueAtual = dado.estoque;
-
+                if (mesmoId || mesmoNome) {
+                    const qtdVendida = produto.quantidade ?? 0;
+                    const estoqueAtual = dado.estoque ?? 0;
                     const novoEstoque = estoqueAtual - qtdVendida;
 
-                    db.collection('produtos')
-                        .doc(idProduto)
-                        .update({
+                    console.log(`📦 Produto: ${dado.nome}`);
+                    console.log(`   Estoque antes: ${estoqueAtual}`);
+                    console.log(`   Quantidade vendida: ${qtdVendida}`);
+                    console.log(`   Estoque depois: ${novoEstoque}`);
+
+                    updates.push(
+                        db.collection('produtos').doc(idProduto).update({
                             estoque: novoEstoque
-                        });
-                    
+                        })
+                    );
                 }
             });
-
         });
+
+        await Promise.all(updates);
+        console.log(`✅ Estoque atualizado para ${updates.length} produto(s)`);
 
     } catch (error) {
         console.error("Erro ao atualizar estoque:", error);
@@ -487,76 +494,125 @@ async function verResumoVenda(idVenda) {
         }
 
         if (result.isConfirmed) {
-            console.log("CLICOU EM FECHAR");
             return;
         }
 
         if (result.dismiss === Swal.DismissReason.cancel) {
 
-    const { value: senha } = await Swal.fire({
-        title: "Cancelar venda",
-        text: "Digite a senha para cancelar a venda",
-        input: "password",
-        inputPlaceholder: "Senha",
-        showCancelButton: true,
-        confirmButtonText: "Confirmar cancelamento",
-        cancelButtonText: "Voltar",
-        confirmButtonColor: "#d62828",
-        reverseButtons: true,
-        heightAuto: false,
-        customClass: {
-                popup: "swal-venda-popup"
-            }
-    });
-
-    if (!senha) return;
-
-    const senhaCorreta = localStorage.getItem('senhaUser')
-
-    if (senha !== senhaCorreta) {
-        Swal.fire({
-            icon: "error",
-            title: "Senha incorreta",
+        const { value: senha } = await Swal.fire({
+            title: "Cancelar venda",
+            text: "Digite a senha para cancelar a venda",
+            input: "password",
+            inputPlaceholder: "Senha",
+            showCancelButton: true,
+            confirmButtonText: "Confirmar cancelamento",
+            cancelButtonText: "Voltar",
+            confirmButtonColor: "#d62828",
+            reverseButtons: true,
             heightAuto: false,
             customClass: {
-                popup: "swal-venda-popup"
-            }
-        });
-        return;
-    }
-
-    // 👉 BOTÃO IMPRIMIR
-    if (result.isDenied) {
-        console.log("Imprimir venda");
-        imprimirPedido(); // sua função
-        return; // impede continuar
-    }
-
-    await db.collection("vendas").doc(docId).delete();
-
-    Swal.fire({
-        icon: "success",
-        title: "Venda cancelada com sucesso",
-        heightAuto: false,
-        customClass: {
-                popup: "swal-venda-popup"
-            }
+                    popup: "swal-venda-popup"
+                }
         });
 
-        window.location.reload();
-    }
+        if (!senha) return;
+
+        const senhaCorreta = localStorage.getItem('senhaUser')
+
+        if (senha !== senhaCorreta) {
+            Swal.fire({
+                icon: "error",
+                title: "Senha incorreta",
+                heightAuto: false,
+                customClass: {
+                    popup: "swal-venda-popup"
+                }
+            });
+            return;
+        }
+
+        // 👉 BOTÃO IMPRIMIR
+        if (result.isDenied) {
+            console.log("Imprimir venda");
+            imprimirPedido(); // sua função
+            return; // impede continuar
+        }
+
+        // antes de deletar, reverte o estoque
+        await reverterEstoque(venda.produtos || [], venda.idLoja);
+
+        await db.collection("vendas").doc(docId).delete();
+
+        Swal.fire({
+            icon: "success",
+            title: "Venda cancelada com sucesso",
+            heightAuto: false,
+            customClass: {
+                    popup: "swal-venda-popup"
+                }
+            });
+
+            window.location.reload();
+        }
+
+        } catch (error) {
+            console.error(error);
+            Swal.fire({
+                icon: "error",
+                title: "Erro ao visualizar venda",
+                text: error.message,
+                heightAuto: false,
+                customClass: {
+                    popup: "swal-venda-popup"
+                }
+            });
+        }
+}
+
+async function reverterEstoque(produtos, loja) {
+    const db = firebase.firestore();
+
+    try {
+        const snapshot = await db
+            .collection('produtos')
+            .where('idLoja', '==', loja)
+            .get();
+
+        const updates = [];
+
+        snapshot.forEach(doc => {
+            const dado = doc.data();
+            const idProduto = doc.id;
+
+            produtos.forEach(produto => {
+                const mesmoId = produto.idProduto && produto.idProduto === idProduto;
+                const mesmoNome = produto.nome?.trim().toLowerCase() === dado.nome?.trim().toLowerCase();
+
+                if (mesmoId || mesmoNome) {
+                    const qtdVendida = produto.quantidade ?? 0;
+                    const estoqueAtual = dado.estoque ?? 0;
+                    const novoEstoque = estoqueAtual + qtdVendida; // ✅ soma em vez de subtrair
+
+                    console.log(`↩️ Revertendo estoque: ${dado.nome}`);
+                    console.log(`   Estoque antes: ${estoqueAtual}`);
+                    console.log(`   Quantidade devolvida: ${qtdVendida}`);
+                    console.log(`   Estoque depois: ${novoEstoque}`);
+
+                    updates.push(
+                        db.collection('produtos').doc(idProduto).update({
+                            estoque: novoEstoque
+                        })
+                    );
+                }
+            });
+        });
+
+        await Promise.all(updates);
+        console.log(`✅ Estoque revertido para ${updates.length} produto(s)`);
 
     } catch (error) {
-        console.error(error);
-        Swal.fire({
-            icon: "error",
-            title: "Erro ao visualizar venda",
-            text: error.message,
-            heightAuto: false,
-            customClass: {
-                popup: "swal-venda-popup"
-            }
-        });
+        console.error("Erro ao reverter estoque:", error);
+        throw error; // propaga o erro pra tratar no cancelamento
     }
 }
 
@@ -601,70 +657,93 @@ async function estoqueBaixo() {
 
     if(lista.length > 0) {
         const nomes = lista.map(item => item.nome).join('\n')
-        //console.log('Produtos com estoque baixo:\n\n' + nomes)
+        console.log('Produtos com estoque baixo:\n\n' + nomes)
     }
 }
 
 function selecaoLoja() {
     const selecionarLoja = document.getElementById('selecionarLoja')
-        selecionarLoja.style.display = 'flex'
+    selecionarLoja.style.display = 'flex'
 
-        // BUSCA NO LOCALSTORAGE AS LOJAS QUE O ABENÇOADO TEM NO CADASTRO DELE, JUNTO AO CARGO
-        const lojas = JSON.parse(localStorage.getItem('lojas'))
+    const lojas = JSON.parse(localStorage.getItem('lojas'))
 
-        // FAZ UM FOREACH PRA ACESSAR CADA LOJA NO CADASTRO
-        lojas.forEach((loja) => {
+    lojas.forEach((loja) => {
+        const lojasSelecao = document.getElementById('lojasSelecao')
+        const label = document.createElement('label')
+        label.setAttribute('id', loja.idLoja)
+        label.dataset.cargo = loja.cargo
+        label.classList.add('labelLoja')
 
-            // CRIA A LABEL LÁ NO HTML PRO AMIGÃO CLICAR
-            const lojasSelecao = document.getElementById('lojasSelecao')
-            const label = document.createElement('label')
-            label.setAttribute('id', loja.idLoja)
-            label.dataset.cargo = loja.cargo
-            label.classList.add('labelLoja')
+        const nomeDaLoja = loja.nome || loja.nomeLoja || 'Sem nome'  // ✅ fallback
 
-            const nomeLoja = document.createElement('p')
-            nomeLoja.textContent = loja.nomeLoja
-            label.appendChild(nomeLoja)
+        const pNome = document.createElement('p')
+        pNome.textContent = nomeDaLoja
+        label.appendChild(pNome)
 
-            const cargoLoja = document.createElement('p')
-            cargoLoja.textContent = 'Cargo: ' + loja.cargo
-            label.appendChild(cargoLoja)
-            
-            lojasSelecao.appendChild(label)
+        const pCargo = document.createElement('p')
+        pCargo.textContent = 'Cargo: ' + loja.cargo
+        label.appendChild(pCargo)
+
+        const btnExcluir = document.createElement('button')
+        btnExcluir.textContent = '✕'
+        btnExcluir.classList.add('btnExcluirLoja')
+        label.appendChild(btnExcluir)
+
+        btnExcluir.addEventListener('click', async (e) => {
+            e.stopPropagation()
+            await excluirLoja(loja.idLoja, nomeDaLoja, loja.cargo)  // ✅ usa o fallback
         })
 
-        // CAPTURAR O QUE O AMIGÃO ESCOLHEU E SETAR NO selecaoLoja DENTRO DO LOCALSTORAGE PRA PODER PUXAR AS INFOS DEPOIS
-        const lojasSelection = document.querySelectorAll('.labelLoja')
+        lojasSelecao.appendChild(label)
+    })
 
-        lojasSelection.forEach(loja => {
-            loja.addEventListener('click', (event) => {
-                // SETA DENTRO DO LOCALSTORAGE O ID DA LOJA QUE ESTAVA NO BOTÃO
-                localStorage.setItem('selecaoLoja', event.currentTarget.id)
-                localStorage.setItem('cargo', event.currentTarget.dataset.cargo)
-                console.log(localStorage.selecaoLoja)
-                console.log(localStorage.cargo)
-
-                // ACHA O ELEMENTO E REMOVE ELE DA TELA PRA PODER USAR O SISTEMA
-                const selecionarLoja = document.getElementById('selecionarLoja')
-                selecionarLoja.style.display = 'none'
-
-                // REINICIA A PAGINA PRA PUXAR TUDO CERTO
-                window.location.reload()
-            })
+    const lojasSelection = document.querySelectorAll('.labelLoja')
+    lojasSelection.forEach(loja => {
+        loja.addEventListener('click', (event) => {
+            localStorage.setItem('selecaoLoja', event.currentTarget.id)
+            localStorage.setItem('cargo', event.currentTarget.dataset.cargo)
+            document.getElementById('selecionarLoja').style.display = 'none'
+            window.location.reload()
         })
+    })
 }
 
-async function adicionarLoja() {
-    const escapeHtml = (valor) => {
-        if (valor === null || valor === undefined) return ''
-        return String(valor)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;')
+//Função para verificar se tem lojas no cadastro do amigão
+async function verificarLojas() {
+  try {
+    const db = firebase.firestore();
+
+    // Pega o usuário logado
+    const usuarioLogado = firebase.auth().currentUser;
+    if (!usuarioLogado) {
+      Swal.showValidationMessage('Nenhum usuário logado. Faça login novamente.');
+      return;
     }
 
+    const banco = await db.collection('users').doc(usuarioLogado.uid).get();
+    if (!banco.exists) {
+      console.log('Documento do usuário não encontrado.');
+      return;
+    }
+
+    const dados = banco.data();
+
+    console.log(dados);
+
+    if (dados.lojas && Array.isArray(dados.lojas) && dados.lojas.length > 0) {
+
+    } else {
+      console.warn('O usuário não tem lojas cadastradas.');
+      adicionarLoja()
+    }
+
+  } catch (erro) {
+    console.error('Erro ao verificar lojas:', erro);
+  }
+}
+
+//Função para criar nova loja
+async function adicionarLoja() {
     await Swal.fire({
         width: '920px',
         showConfirmButton: false,
@@ -687,10 +766,14 @@ async function adicionarLoja() {
                     </div>
 
                     <div class="swal-edit-produto-grid swal-edit-produto-grid-2">
-
                         <div class="swal-edit-produto-field">
                             <label>Nome</label>
                             <input id="AddLojaNome" class="swal-edit-produto-input" type="text">
+                        </div>
+
+                        <div class="swal-edit-produto-field">
+                            <label>Cidade</label>
+                            <input id="AddLojaCidade" class="swal-edit-produto-input" type="text">
                         </div>
                     </div>
 
@@ -704,24 +787,24 @@ async function adicionarLoja() {
 
                 <div class="swal-edit-produto-section">
                     <div class="swal-edit-produto-section-title">
-                        <span>Taxas</span>
+                        <span>Taxas (%)</span>
                         <div class="swal-edit-produto-section-line"></div>
                     </div>
 
                     <div class="swal-edit-produto-grid swal-edit-produto-grid-3">
                         <div class="swal-edit-produto-field">
-                            <label>Crédito</label>
-                            <input id="AddLojaCredito" class="swal-edit-produto-input" type="number" step="0.0001">
+                            <label>Crédito (%)</label>
+                            <input id="AddLojaCredito" class="swal-edit-produto-input" type="number" step="0.01" placeholder="ex: 4.31">
                         </div>
 
                         <div class="swal-edit-produto-field">
-                            <label>Débito</label>
-                            <input id="AddLojaDebito" class="swal-edit-produto-input" type="number" step="0.0001">
+                            <label>Débito (%)</label>
+                            <input id="AddLojaDebito" class="swal-edit-produto-input" type="number" step="0.01" placeholder="ex: 0.99">
                         </div>
 
                         <div class="swal-edit-produto-field">
-                            <label>iFood</label>
-                            <input id="AddLojaIfood" class="swal-edit-produto-input" type="number" step="0.0001">
+                            <label>iFood (%)</label>
+                            <input id="AddLojaIfood" class="swal-edit-produto-input" type="number" step="0.01" placeholder="ex: 28.19">
                         </div>
                     </div>
                 </div>
@@ -735,15 +818,15 @@ async function adicionarLoja() {
         didOpen: () => {
             const popup = Swal.getPopup()
 
-            const id = popup.querySelector('#AddLojaId')
-            const nome = popup.querySelector('#AddLojaNome')
+            const nome     = popup.querySelector('#AddLojaNome')
+            const cidade   = popup.querySelector('#AddLojaCidade')
             const endereco = popup.querySelector('#AddLojaEndereco')
-            const credito = popup.querySelector('#AddLojaCredito')
-            const debito = popup.querySelector('#AddLojaDebito')
-            const ifood = popup.querySelector('#AddLojaIfood')
+            const credito  = popup.querySelector('#AddLojaCredito')
+            const debito   = popup.querySelector('#AddLojaDebito')
+            const ifood    = popup.querySelector('#AddLojaIfood')
 
             const btnCancelar = popup.querySelector('#swalAddLojaCancelar')
-            const btnSalvar = popup.querySelector('#swalAddLojaSalvar')
+            const btnSalvar   = popup.querySelector('#swalAddLojaSalvar')
 
             function normalizarNumero(valor) {
                 if (!valor) return 0
@@ -753,48 +836,152 @@ async function adicionarLoja() {
             btnCancelar.onclick = () => Swal.close()
 
             btnSalvar.onclick = async () => {
-                if (!id.value.trim() || !nome.value.trim() || !endereco.value.trim()) {
-                    Swal.showValidationMessage('Preencha os campos obrigatórios')
+                if (!nome.value.trim() || !cidade.value.trim() || !endereco.value.trim()) {
+                    Swal.showValidationMessage('Preencha os campos obrigatórios: Nome, Cidade e Endereço')
                     return
                 }
 
-                const idGerado = firebase.firestore().collection('lojas').doc().id;
+                // Pega o usuário logado
+                const usuarioLogado = firebase.auth().currentUser
+                if (!usuarioLogado) {
+                    Swal.showValidationMessage('Nenhum usuário logado. Faça login novamente.')
+                    return
+                }
+
+                // Gera o ID junto com o documento
+                const docRef = firebase.firestore().collection('lojas').doc()
+
+                // Valores em % que o usuário digitou
+                const creditoPct = normalizarNumero(credito.value)
+                const debitoPct  = normalizarNumero(debito.value)
+                const ifoodPct   = normalizarNumero(ifood.value)
 
                 const novaLoja = {
-                    id: idGerado,
-                    nome: nome.value.trim(),
+                    id:      docRef.id,
+                    idResp:  usuarioLogado.uid,
+                    nome:    nome.value.trim(),
+                    cidade:  cidade.value.trim(),
                     endereco: endereco.value.trim(),
                     taxas: {
-                        credito: normalizarNumero(credito.value),
-                        debito: normalizarNumero(debito.value),
-                        ifood: normalizarNumero(ifood.value)
+                        credito: creditoPct / 100,   // decimal (ex: 0.0431)
+                        debito:  debitoPct  / 100,   // decimal (ex: 0.0099)
+                        ifood:   ifoodPct   / 100,   // decimal (ex: 0.2819)
                     }
                 }
 
                 try {
-                    console.log('Loja criada:', novaLoja)
+                    await docRef.set(novaLoja)
 
-                    // 👉 aqui você pode salvar no Firebase depois
-                    // await db.collection("lojas").doc(novaLoja.id).set(novaLoja)
+                    await firebase.firestore().collection('users').doc(usuarioLogado.uid).set({
+                        lojas: firebase.firestore.FieldValue.arrayUnion({
+                            cargo: 'ADM',
+                            idLoja: docRef.id,
+                            nome: nome.value.trim()
+                        })
+                    }, { merge: true })
+
+                    const lojasAtuais = JSON.parse(localStorage.getItem('lojas')) || []
+                    lojasAtuais.push({
+                        cargo: 'ADM',
+                        idLoja: docRef.id,
+                        nome: nome.value.trim()
+                    })
+                    localStorage.setItem('lojas', JSON.stringify(lojasAtuais))
 
                     Swal.close()
-
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Sucesso',
-                        text: 'Loja adicionada'
-                    })
+                    Swal.fire({ icon: 'success', title: 'Sucesso', text: 'Loja adicionada com sucesso!' })
+                    window.location.reload()
 
                 } catch (error) {
+                    console.error('❌ Erro:', error)
                     Swal.fire({
                         icon: 'error',
-                        title: 'Erro',
+                        title: 'Erro ao salvar',
                         text: error.message
                     })
                 }
             }
         }
     })
+}
+
+async function excluirLoja(idLoja, nomeLoja, cargo) {
+    const { value: senha } = await Swal.fire({
+        title: 'Excluir loja',
+        html: `
+            <p>Você está prestes a excluir <strong>${nomeLoja}</strong>.</p>
+            <p style="color: red; font-size: 0.9em;">⚠️ Essa ação é irreversível!</p>
+            <input id="swalSenhaExcluir" type="password" class="swal2-input" placeholder="Digite sua senha para confirmar">
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sim, excluir',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+            const senha = document.getElementById('swalSenhaExcluir').value
+            if (!senha) {
+                Swal.showValidationMessage('Digite sua senha para confirmar')
+                return false
+            }
+            return senha
+        }
+    })
+
+    if (!senha) return
+
+    try {
+        const usuarioLogado = firebase.auth().currentUser
+        const credential = firebase.auth.EmailAuthProvider.credential(
+            usuarioLogado.email,
+            senha
+        )
+        await usuarioLogado.reauthenticateWithCredential(credential)
+
+        await firebase.firestore().collection('lojas').doc(idLoja).delete()
+
+        // Tenta remover com 'nome', se falhar tenta com 'nomeLoja'
+        const db = firebase.firestore()
+        const userRef = db.collection('users').doc(usuarioLogado.uid)
+
+        try {
+            await userRef.update({
+                lojas: firebase.firestore.FieldValue.arrayRemove({
+                    cargo: cargo,
+                    idLoja: idLoja,
+                    nome: nomeLoja  // formato novo
+                })
+            })
+        } catch (e) {
+            await userRef.update({
+                lojas: firebase.firestore.FieldValue.arrayRemove({
+                    cargo: cargo,
+                    idLoja: idLoja,
+                    nomeLoja: nomeLoja  // formato antigo
+                })
+            })
+        }
+
+        const lojasAtuais = JSON.parse(localStorage.getItem('lojas')) || []
+        const lojasAtualizadas = lojasAtuais.filter(l => l.idLoja !== idLoja)
+        localStorage.setItem('lojas', JSON.stringify(lojasAtualizadas))
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Loja excluída',
+            text: `${nomeLoja} foi removida com sucesso!`
+        }).then(() => {
+            window.location.reload()
+        })
+
+    } catch (error) {
+        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            Swal.fire({ icon: 'error', title: 'Senha incorreta', text: 'Confirme sua senha e tente novamente.' })
+        } else {
+            Swal.fire({ icon: 'error', title: 'Erro ao excluir', text: error.message })
+        }
+    }
 }
 
 function verificarIdLoja() {
@@ -937,6 +1124,8 @@ async function resumoDia() {
         ? `${rankingPorGasto[0].cliente}`
         : '—'
 }
+
+
 
 verificarIdLoja()
 ultimasVendas()

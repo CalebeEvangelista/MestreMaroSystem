@@ -7,159 +7,270 @@
   <link rel="icon" href="/IMAGENS/favicon.png">
   <link rel="stylesheet" href="/CSS/adm.css">
   <link rel="stylesheet" href="/CSS/admSwal.css">
-
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
 
 <body>
 
-<div class="app">
+  <div class="app">
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <img src="/IMAGENS/logo mestre maro.png" class="logo">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <img src="/IMAGENS/logo mestre maro.png" class="logo">
 
-    <nav>
-      <div class="nav-item active">
-        <i class="fa-solid fa-chart-line"></i>
-        <span>Dashboard</span>
+      <nav>
+        <div class="nav-item active" id="dashboardButton" onclick="openScreen(event, 'dashboard')">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Dashboard</span>
+        </div>
+
+        <div class="nav-item" id="assinantesButton" onclick="openScreen(event, 'assinantes')">
+          <i class="fa-solid fa-users"></i>
+          <span>Assinantes</span>
+        </div>
+
+        <div class="nav-item" id="vencimentosButton" onclick="openScreen(event, 'vencimentos')">
+          <i class="fa-solid fa-clock"></i>
+          <span>Vencimentos</span>
+        </div>
+
+        <div class="nav-item" id="faturamentoButton" onclick="openScreen(event, 'faturamentoTela')">
+          <i class="fa-solid fa-dollar-sign"></i>
+          <span>Faturamento</span>
+        </div>
+
+        <div class="nav-item" id="promocionalButton" onclick="openScreen(event, 'promocional')">
+          <i class="fa-solid fa-percent"></i>
+          <span>Promocional</span>
+        </div>
+      </nav>
+
+      <div class="logout" onclick="voltarSistema()">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span>Voltar para o sistema</span>
+      </div>
+    </aside>
+
+    <!-- CONTEÚDO -->
+    <main class="content">
+
+      <!-- DASHBOARD -->
+      <div class="screen Dashboard active" id="dashboard">
+        <header class="top">
+          <h1>Painel Administrativo</h1>
+          <p>Controle dos assinantes do sistema</p>
+        </header>
+
+        <section class="cards">
+          <div class="card">
+            <h3>Assinantes Ativos</h3>
+            <strong id="ativos">-</strong>
+          </div>
+
+          <div class="card warning">
+            <h3>Vencendo</h3>
+            <strong id="vencendo">-</strong>
+          </div>
+
+          <div class="card danger">
+            <h3>Inadimplentes</h3>
+            <strong id="inadiplentes">-</strong>
+          </div>
+
+          <div class="card">
+            <h3>Faturamento assinaturas</h3>
+            <strong id="faturamento">R$ - </strong>
+          </div>
+        </section>
+
+        <section class="table-section">
+          <div class="table-header">
+            <h2>Assinantes</h2>
+            <input type="text" placeholder="Buscar assinante...">
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Loja</th>
+                <th>Adicionais</th>
+                <th>Status</th>
+                <th>Expiração</th>
+                <th>Faturamento</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+
+            <tbody id="tabelaDashboard"></tbody>
+          </table>
+        </section>
       </div>
 
-      <div class="nav-item">
-        <i class="fa-solid fa-users"></i>
-        <span>Assinantes</span>
+      <!-- ASSINANTES -->
+      <div class="screen" id="assinantes">
+        <header class="top">
+          <h1>Assinantes</h1>
+          <p>Lista detalhada dos assinantes</p>
+        </header>
+
+        <section class="table-section">
+          <div class="table-header">
+            <h2>Assinantes</h2>
+            <input type="text" placeholder="Buscar assinante...">
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Loja</th>
+                <th>Adicionais</th>
+                <th>Status</th>
+                <th>Expiração</th>
+                <th>Faturamento</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+
+            <tbody id="tabelaAssinantes"></tbody>
+          </table>
+        </section>
       </div>
 
-      <div class="nav-item">
-        <i class="fa-solid fa-clock"></i>
-        <span>Vencimentos</span>
+      <!-- VENCIMENTOS -->
+      <div class="screen" id="vencimentos">
+        <header class="top">
+          <h1>Vencimentos</h1>
+          <p>Controle de prazos e expirações</p>
+        </header>
+
+        <section class="table-section">
+          <div class="table-header">
+            <h2>Próximos vencimentos</h2>
+            <input type="text" placeholder="Buscar vencimento...">
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Loja</th>
+                <th>Status</th>
+                <th>Expiração</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+
+            <tbody id="tabelaVencimentos"></tbody>
+          </table>
+        </section>
       </div>
 
-      <div class="nav-item">
-        <i class="fa-solid fa-dollar-sign"></i>
-        <span>Faturamento</span>
-      </div>
-    </nav>
+      <!-- FATURAMENTO -->
+      <div class="screen" id="faturamentoTela">
+        <header class="top">
+          <h1>Faturamento</h1>
+          <p>Visão geral do faturamento</p>
+        </header>
 
-    <div class="logout" onclick="voltarSistema()">
-      <i class="fa-solid fa-right-from-bracket"></i>
-      <span>Voltar para o sistema</span>
-    </div>
-  </aside>
+        <section class="cards">
+          <div class="card">
+            <h3>Total recebido</h3>
+            <strong id="faturamentoTotalTela">R$ -</strong>
+          </div>
 
-  <!-- CONTEÚDO -->
-  <main class="content">
+          <div class="card warning">
+            <h3>Previsão</h3>
+            <strong id="previsaoFaturamento">R$ -</strong>
+          </div>
+        </section>
 
-    <!-- HEADER -->
-    <header class="top">
-      <h1>Painel Administrativo</h1>
-      <p>Controle dos assinantes do sistema</p>
-    </header>
+        <section class="table-section">
+          <div class="table-header">
+            <h2>Movimentações</h2>
+            <input type="text" placeholder="Buscar movimentação...">
+          </div>
 
-    <!-- CARDS -->
-    <section class="cards">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Loja</th>
+                <th>Valor</th>
+                <th>Data</th>
+                <th>Status</th>
+              </tr>
+            </thead>
 
-      <div class="card">
-        <h3>Assinantes Ativos</h3>
-        <strong id="ativos">-</strong>
-      </div>
-
-      <div class="card warning">
-        <h3>Vencendo</h3>
-        <strong id="vencendo">-</strong>
-      </div>
-
-      <div class="card danger">
-        <h3>Inadimplentes</h3>
-        <strong id="inadiplentes">-</strong>
-      </div>
-
-      <div class="card">
-        <h3>Faturamento assinaturas</h3>
-        <strong id="faturamento">R$ - </strong>
+            <tbody id="tabelaFaturamento"></tbody>
+          </table>
+        </section>
       </div>
 
-    </section>
+      <!-- PROMOCIONAL -->
+      <div class="screen promocional" id="promocional">
+        <header class="top">
+          <h1>Painel Administrativo</h1>
+          <p>Controle dos acessos promocionais</p>
+        </header>
 
-    <!-- TABELA PRINCIPAL -->
-    <section class="table-section">
+        <section class="cards">
+          <div class="card">
+            <h3>Cadastros pendentes</h3>
+            <strong id="pendentesP">-</strong>
+          </div>
 
-      <div class="table-header">
-        <h2>Assinantes</h2>
-        <input type="text" placeholder="Buscar assinante...">
+          <div class="card warning">
+            <h3>Cadastros antigos</h3>
+            <strong id="antigosP">-</strong>
+          </div>
+
+          <div class="card danger">
+            <h3>Cadastros recusados</h3>
+            <strong id="recusadosP">-</strong>
+          </div>
+
+          <div class="card">
+            <h3>Faturamento esperado</h3>
+            <strong id="faturamentoP">R$ - </strong>
+          </div>
+        </section>
+
+        <section class="table-section">
+          <div class="table-header">
+            <h2>Cadastros</h2>
+            <input type="text" placeholder="Buscar cadastros...">
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Cidade/Estado</th>
+                <th>Loja</th>
+                <th>Segmento</th>
+                <th>Faixa de faturamento</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+
+            <tbody id="tabelaPromocional"></tbody>
+          </table>
+        </section>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Loja</th>
-            <th>Adicionais</th>
-            <th>Status</th>
-            <th>Expiração</th>
-            <th>Faturamento</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
+    </main>
+  </div>
 
-        <tbody id="tabelaDashboard">
-          <!--
-          <tr>
-            <td>Calebe</td>
-            <td>Esquenta do Povo</td>
-            <td>4</td>
-            <td><span class="status ativo">Ativo</span></td>
-            <td>10/04</td>
-            <td>R$ 2.300</td>
-            <td>
-              <button class="btn">Ver</button>
-              <button class="btn edit">Editar</button>
-            </td>
-          </tr>
-
-          <tr>
-            <td>Maria</td>
-            <td>Loja Prime</td>
-            <td>4</td>
-            <td><span class="status vencendo">Vencendo</span></td>
-            <td>12/04</td>
-            <td>R$ 5.120</td>
-            <td>
-              <button class="btn">Ver</button>
-              <button class="btn edit">Editar</button>
-            </td>
-          </tr>
-
-          <tr>
-            <td>João</td>
-            <td>Loja Beer</td>
-            <td>4</td>
-            <td><span class="status atraso">Atrasado</span></td>
-            <td>01/04</td>
-            <td>R$ 900</td>
-            <td>
-              <button class="btn">Ver</button>
-              <button class="btn edit">Editar</button>
-            </td>
-          </tr>
-          -->
-        </tbody>
-      </table>
-
-    </section>
-
-  </main>
-
-</div>
-
+  <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-storage-compat.js"></script>
+  <script src="/JS/firebase-init.js"></script>
+  <script src="/JS/authGuard.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="/JS/admin.js"></script>
 </body>
-<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.8.4/firebase-storage-compat.js"></script>
-<script src="/JS/firebase-init.js"></script>
-<script src="/JS/authGuard.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="/JS/admin.js"></script>
 </html>

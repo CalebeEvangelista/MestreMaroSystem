@@ -530,6 +530,8 @@ function Loading() {
     loading.classList.toggle('ativo')
 }
 
+
+
 vendasPorMeio()
 lucrosPorDia()
 faturamentoPorDia()

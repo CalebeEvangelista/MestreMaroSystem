@@ -12,6 +12,10 @@ async function completeProducts() {
 
     const snapshot = await db.collection("produtos").orderBy("nome").get();
 
+    const listaNomes = []
+    const listaCompra = []
+    const listaVenda = []
+
     snapshot.docs.forEach(doc => {
         const produto = {
             docId: doc.id,
@@ -19,6 +23,10 @@ async function completeProducts() {
         }
 
         if (String(produto.idLoja || '').trim() !== idLojaSelecao) return;
+
+        listaNomes.push(produto.nome || '')
+        listaCompra.push(Number(produto.valorCompra || 0).toFixed(2).replace('.', ','))
+        listaVenda.push(Number(produto.valorVenda || 0).toFixed(2).replace('.', ','))
 
         const tabela = document.getElementById('tabelaProdutos')
         const tr = document.createElement('tr')
@@ -31,9 +39,13 @@ async function completeProducts() {
         nome.innerHTML = produto.nome || ''
         tr.appendChild(nome)
 
-        const preco = document.createElement('td')
-        preco.textContent = 'R$ ' + Number(produto.valorVenda || 0).toFixed(2).replace('.', ',')
-        tr.appendChild(preco)
+        const compra = document.createElement('td')
+        compra.textContent = 'R$ ' + Number(produto.valorCompra || 0).toFixed(2).replace('.', ',')
+        tr.appendChild(compra)
+
+        const venda = document.createElement('td')
+        venda.textContent = 'R$ ' + Number(produto.valorVenda || 0).toFixed(2).replace('.', ',')
+        tr.appendChild(venda)
 
         const estoque = document.createElement('td')
         estoque.innerHTML =
@@ -42,7 +54,7 @@ async function completeProducts() {
                 : (produto.estoque ?? 0)
 
         tr.appendChild(estoque)
-        
+
 
         const excluir = document.createElement('td')
         const i = document.createElement('i')
@@ -65,6 +77,10 @@ async function completeProducts() {
 
         tabela.appendChild(tr)
     });
+
+    console.log(listaNomes.join('\n'))
+    console.log(listaCompra.join('\n'))
+    console.log(listaVenda.join('\n'))
 }
 
 function abrirEditorDeProduto(docId) {
@@ -740,18 +756,16 @@ async function conferenciaSimples() {
   const db = firebase.firestore();
 
   // 🔹 1. Pega o ID da loja do localStorage
-  // Pode vir como string simples ou JSON
   let idLoja = localStorage.getItem("selecaoLoja");
   try {
     const parsed = JSON.parse(idLoja);
-    idLoja = parsed.id || parsed;
+    // ✅ Fix Bug 1: evita "[object Object]" quando não tem chave .id
+    idLoja = (typeof parsed === "object" ? parsed.id : parsed) || idLoja;
   } catch {}
 
-  // 🔹 Garante que é string limpa (evita bugs de comparação)
   idLoja = String(idLoja || "").trim();
 
-  // 🔹 2. Busca SOMENTE produtos da loja no Firestore
-  // 👉 Isso evita trazer tudo e filtrar depois (mais rápido e seguro)
+  // 🔹 2. Busca produtos da loja no Firestore
   const snapshot = await db
     .collection("produtos")
     .where("idLoja", "==", idLoja)
@@ -761,28 +775,16 @@ async function conferenciaSimples() {
   const produtos = snapshot.docs
     .map(doc => {
       const data = doc.data();
-
-
       return {
-        // 🔥 ESSENCIAL: docId é o identificador único no Firestore
         docId: doc.id,
-
-        // Nome tratado (evita null, undefined, espaços)
         nome: String(data.nome || "").trim(),
-
-        // ID apenas para exibição (não usamos mais para salvar)
         id: data.id || data.codigoBarras || doc.id,
-
-        // Estoque atual
         estoque: Number.isFinite(Number(data.estoque)) ? Number(data.estoque) : 'none'
       };
     })
-    // 🔹 Remove produtos sem nome (dados inválidos)
     .filter(produto => produto.nome && produto.estoque !== 'none')
-    // 🔹 Ordena por nome
     .sort((a, b) => a.nome.localeCompare(b.nome));
 
-  // 🔹 Se não encontrou produtos, para aqui
   if (!produtos.length) {
     await Swal.fire({
       title: "Aviso",
@@ -793,7 +795,6 @@ async function conferenciaSimples() {
     return;
   }
 
-  // 🔹 Lista final da conferência
   const listaConferencia = [];
 
   // 🔹 4. Loop de conferência produto por produto
@@ -818,7 +819,6 @@ async function conferenciaSimples() {
       heightAuto: false,
       focusConfirm: false,
 
-      // 🔹 Foco automático no input
       didOpen: () => {
         const input = document.getElementById("qtd");
         if (!input) return;
@@ -826,7 +826,6 @@ async function conferenciaSimples() {
         input.focus();
         input.select();
 
-        // Enter confirma
         input.addEventListener("keydown", e => {
           if (e.key === "Enter") {
             e.preventDefault();
@@ -835,20 +834,22 @@ async function conferenciaSimples() {
         });
       },
 
-      // 🔹 Validação do input
       preConfirm: () => {
-        const qtd = Number(document.getElementById("qtd").value);
-
+        // ✅ Fix Bug 2: impede que campo vazio passe como 0
+        const raw = document.getElementById("qtd").value;
+        if (raw === "" || raw === null) {
+          Swal.showValidationMessage("Informe a quantidade");
+          return false;
+        }
+        const qtd = Number(raw);
         if (isNaN(qtd) || qtd < 0) {
           Swal.showValidationMessage("Quantidade inválida");
           return false;
         }
-
         return qtd;
       }
     });
 
-    // 🔹 Se clicou em cancelar (fechar)
     if (isDismissed) {
       const confirmacao = await Swal.fire({
         title: "Encerrar conferência?",
@@ -862,22 +863,19 @@ async function conferenciaSimples() {
 
       if (confirmacao.isConfirmed) break;
 
-      // 🔹 Volta para o mesmo produto
       i--;
       continue;
     }
 
-    // 🔹 Se confirmou, salva na lista
     if (isConfirmed) {
       listaConferencia.push({
-        docId: produto.docId, // 🔥 chave real do banco
-        nome: produto.nome,   // só para exibir depois
+        docId: produto.docId,
+        nome: produto.nome,
         qtdInformada: value
       });
     }
   }
 
-  // 🔹 Se não conferiu nada
   if (!listaConferencia.length) {
     await Swal.fire({
       title: "Aviso",
@@ -888,7 +886,7 @@ async function conferenciaSimples() {
     return;
   }
 
-  // 🔹 5. Mostra resumo antes de salvar
+  // 🔹 5. Resumo antes de salvar
   const resumo = `
     <div style="max-height:400px; overflow:auto;">
       <table style="width:100%;">
@@ -924,7 +922,6 @@ async function conferenciaSimples() {
   // 🔹 6. Salva no banco
   const resultado = await salvarConferenciaNoBanco(listaConferencia);
 
-  // 🔹 Se teve erro parcial
   if (resultado.erros.length) {
     await Swal.fire({
       title: "Parcial",
@@ -938,7 +935,6 @@ async function conferenciaSimples() {
     return;
   }
 
-  // 🔹 Sucesso total
   await Swal.fire({
     title: "Sucesso",
     text: "Conferência salva.",
@@ -952,7 +948,6 @@ async function salvarConferenciaNoBanco(listaConferencia) {
   const erros = [];
   let atualizados = 0;
 
-  // 🔹 Atualiza tudo em paralelo
   await Promise.all(listaConferencia.map(async (item) => {
     const estoqueNovo = Number(item.qtdInformada);
     if (!Number.isFinite(estoqueNovo) || estoqueNovo < 0) {

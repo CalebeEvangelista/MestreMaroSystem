@@ -42,6 +42,7 @@ async function login() {
         localStorage.setItem("userId", id);
         localStorage.setItem("selecaoLoja", '');
         localStorage.setItem("senhaUser", senha.value);
+        localStorage.setItem("user", dados.nome);
 
         window.location.href = "/HTML/home.html";
 

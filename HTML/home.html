@@ -10,7 +10,7 @@
     
 </head>
 <body>
-    <header>    
+    <header>   
         <img src="/IMAGENS/logo mestre maro.png">
         <div class="itemCategoria" id="visao" onclick="openScreen('visao')">
             <i class="fa-solid fa-eye"></i>
@@ -138,6 +138,11 @@
         </section>
 
         <section class="pdv" >
+            <div class="storeClose">
+                <i class="fa-solid fa-lock"></i>
+                <h1>Caixa fechado</h1>
+                <button onclick="abrirModalCaixa()">ABRIR CAIXA</button>
+            </div>
             <div class="productContainer">
                 <input type="text" id="produto" placeholder="Produto" autocomplete="off" autofocus class="inputProduct" list="listaProdutosSugestao"> 
                 <datalist id="listaProdutosSugestao"></datalist>
@@ -188,6 +193,8 @@
                 <button id="cancelarVenda" onclick="limparPDV()"><i class="fa-solid fa-xmark"></i></button>
                 <button id="finalizarVenda" onclick="abrirPagamento()"><i class="fa-solid fa-right-long"></i></button>
             </div>
+
+            <p>SHIFT: Adicionar Produto a Lista / ENTER: Abrir tela de pagamento / F8: Abrir resumo do caixa / F10: Finalizar venda</p>
         </section>
 
         <section class="compras">
@@ -480,7 +487,8 @@
                         <tr class="cabecalho">
                             <td>Código</td>
                             <td>Nome Produto</td>
-                            <td>Preço</td>
+                            <td>Compra</td>
+                            <td>Venda</td>
                             <td>Estoque</td>
                         </tr>
                     </thead>
@@ -597,6 +605,8 @@
                         </label>
                     </div>
                 </div>
+
+                
             </div>
         </section>
 
