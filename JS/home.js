@@ -1125,7 +1125,1283 @@ async function resumoDia() {
         : '—'
 }
 
+async function verificarDB() {
+    try {
+        const db = firebase.firestore();
 
+        const nomeColecao = 'users'
+
+        const snapshot = await db.collection(nomeColecao).get();
+
+        const cadastros = [];
+
+        snapshot.forEach(doc => {
+            cadastros.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+
+        console.log(`Coleção: ${nomeColecao}`);
+        console.log(`Total de cadastros: ${cadastros.length}`);
+        console.table(cadastros);
+
+        return cadastros;
+
+    } catch (error) {
+        console.error("Erro ao consultar a coleção:", error);
+        return [];
+    }
+}
+
+async function ativarUsuario(id) {
+    try {
+        const db = firebase.firestore();
+
+        await db.collection("users").doc(id).update({
+            status: "ativo"
+        });
+
+        console.log(`Usuário ${id} ativado com sucesso!`);
+
+    } catch (error) {
+        console.error("Erro ao ativar usuário:", error);
+    }
+}
+
+async function gerarListaDeCompras() {
+    const idLoja = localStorage.getItem('selecaoLoja')
+
+    if (!idLoja) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Nenhuma loja selecionada',
+            text: 'Selecione uma loja antes de gerar a lista.',
+            heightAuto: false
+        })
+        return
+    }
+
+    const resultado = await Swal.fire({
+        title: 'Gerar lista de compras',
+        customClass: {
+            popup: 'swal-caixa-popup'
+        },
+        heightAuto: false,
+        focusConfirm: false,
+
+        showCancelButton: true,
+        showDenyButton: true,
+
+        confirmButtonText: 'Gerar lista',
+        denyButtonText: 'Lista recomendada',
+        cancelButtonText: 'Cancelar',
+
+        html: `
+            <div class="swal-caixa-wrap">
+
+                <div class="swal-caixa-section">
+
+                    <div class="swal-caixa-field">
+                        <label>Data inicial</label>
+
+                        <input
+                            type="date"
+                            id="listaDataInicial"
+                            class="swal-caixa-input"
+                        >
+                    </div>
+
+                    <div class="swal-caixa-field">
+                        <label>Data final</label>
+
+                        <input
+                            type="date"
+                            id="listaDataFinal"
+                            class="swal-caixa-input"
+                        >
+                    </div>
+
+                </div>
+
+            </div>
+        `,
+
+        preConfirm: () => {
+
+            const dataInicial =
+                document.getElementById(
+                    'listaDataInicial'
+                ).value
+
+            const dataFinal =
+                document.getElementById(
+                    'listaDataFinal'
+                ).value
+
+            if (!dataInicial || !dataFinal) {
+                Swal.showValidationMessage(
+                    'Selecione a data inicial e a data final'
+                )
+
+                return false
+            }
+
+            if (dataInicial > dataFinal) {
+                Swal.showValidationMessage(
+                    'A data inicial não pode ser depois da data final'
+                )
+
+                return false
+            }
+
+            return {
+                dataInicial,
+                dataFinal
+            }
+        },
+
+        preDeny: () => {
+
+            const dataInicial =
+                document.getElementById(
+                    'listaDataInicial'
+                ).value
+
+            const dataFinal =
+                document.getElementById(
+                    'listaDataFinal'
+                ).value
+
+            if (!dataInicial || !dataFinal) {
+                Swal.showValidationMessage(
+                    'Selecione a data inicial e a data final'
+                )
+
+                return false
+            }
+
+            if (dataInicial > dataFinal) {
+                Swal.showValidationMessage(
+                    'A data inicial não pode ser depois da data final'
+                )
+
+                return false
+            }
+
+            return {
+                dataInicial,
+                dataFinal
+            }
+        }
+    })
+
+    if (resultado.isDismissed) return
+
+    const datas = resultado.value
+
+    // ============================================================
+    // LISTA RECOMENDADA
+    // ============================================================
+
+    if (resultado.isDenied) {
+
+        await gerarListaDeComprasRecomendada(
+            datas.dataInicial,
+            datas.dataFinal
+        )
+
+        return
+    }
+
+    // ============================================================
+    // LISTA NORMAL
+    // ============================================================
+
+    Swal.fire({
+        title: 'Gerando lista...',
+        allowOutsideClick: false,
+        heightAuto: false,
+        didOpen: () => Swal.showLoading()
+    })
+
+    try {
+
+        const db = firebase.firestore()
+
+        const inicio =
+            parseDataInput(datas.dataInicial)
+
+        inicio.setHours(0, 0, 0, 0)
+
+        const fim =
+            parseDataInput(datas.dataFinal)
+
+        fim.setHours(23, 59, 59, 999)
+
+        const timestampInicio =
+            firebase.firestore.Timestamp.fromDate(
+                inicio
+            )
+
+        const timestampFim =
+            firebase.firestore.Timestamp.fromDate(
+                fim
+            )
+
+        const snapshot =
+            await db.collection('vendas')
+                .where(
+                    'idLoja',
+                    '==',
+                    idLoja
+                )
+                .where(
+                    'criadoEm',
+                    '>=',
+                    timestampInicio
+                )
+                .where(
+                    'criadoEm',
+                    '<=',
+                    timestampFim
+                )
+                .get()
+
+        const contagem = {}
+
+        snapshot.forEach(doc => {
+
+            const venda = doc.data()
+
+            ;(venda.produtos || []).forEach(produto => {
+
+                const nome =
+                    (produto.nome || 'SEM NOME')
+                        .toUpperCase()
+                        .trim()
+
+                const quantidade =
+                    Number(produto.quantidade) || 0
+
+                contagem[nome] =
+                    (contagem[nome] || 0) +
+                    quantidade
+            })
+        })
+
+        const lista =
+            Object.entries(contagem)
+                .map(([nome, quantidade]) => ({
+                    nome,
+                    quantidade
+                }))
+                .sort(
+                    (a, b) =>
+                        b.quantidade -
+                        a.quantidade
+                )
+
+        if (!lista.length) {
+
+            Swal.fire({
+                icon: 'info',
+                title: 'Nenhuma venda encontrada',
+                text: 'Não foram encontradas vendas nesse período para essa loja.',
+                heightAuto: false
+            })
+
+            return
+        }
+
+        const dataInicialFormatada =
+            inicio.toLocaleDateString('pt-BR')
+
+        const dataFinalFormatada =
+            fim.toLocaleDateString('pt-BR')
+
+        const itensHtml =
+            lista.map(item => `
+                <li>
+                    ${item.quantidade}x ${item.nome}
+                </li>
+            `).join('')
+
+        Swal.fire({
+
+            customClass: {
+                popup: 'swal-tabela-popup'
+            },
+
+            heightAuto: false,
+
+            showCancelButton: true,
+
+            confirmButtonText: 'Imprimir',
+
+            cancelButtonText: 'Fechar',
+
+            html: `
+                <div
+                    class="swal-tabela-wrap"
+                    style="text-align:left;"
+                >
+
+                    <h2
+                        class="swal-tabela-titulo"
+                        style="font-size:1.3rem;"
+                    >
+                        ITENS VENDIDOS ENTRE
+                        ${dataInicialFormatada}
+                        E
+                        ${dataFinalFormatada}
+                    </h2>
+
+                    <ul style="
+                        list-style:none;
+                        padding:0;
+                        display:flex;
+                        flex-direction:column;
+                        gap:8px;
+                    ">
+                        ${itensHtml}
+                    </ul>
+
+                </div>
+            `
+
+        }).then(result => {
+
+            if (result.isConfirmed) {
+
+                imprimirListaDeCompras(
+                    lista,
+                    dataInicialFormatada,
+                    dataFinalFormatada
+                )
+
+            }
+
+        })
+
+    } catch (error) {
+
+        console.error(
+            'Erro ao gerar lista de compras:',
+            error
+        )
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro ao gerar lista',
+            text: error.message,
+            heightAuto: false
+        })
+    }
+}
+
+async function gerarListaDeComprasRecomendada(
+    dataInicial,
+    dataFinal
+) {
+
+    const idLojaRaw =
+        localStorage.getItem('selecaoLoja')
+
+    if (!idLojaRaw) {
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Nenhuma loja selecionada',
+            text: 'Selecione uma loja antes de gerar a lista.',
+            heightAuto: false
+        })
+
+        return
+    }
+
+    let idLoja = idLojaRaw
+
+    try {
+
+        const parsed =
+            JSON.parse(idLojaRaw)
+
+        idLoja =
+            parsed.id || parsed
+
+    } catch {}
+
+    idLoja =
+        String(idLoja || '').trim()
+
+    if (!idLoja) {
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Loja inválida',
+            text: 'Não foi possível identificar a loja selecionada.',
+            heightAuto: false
+        })
+
+        return
+    }
+
+    // Quantos dias de estoque queremos considerar
+    const DIAS_COBERTURA = 7
+
+    Swal.fire({
+        title: 'Analisando estoque...',
+        text: 'Calculando a necessidade de reposição.',
+        allowOutsideClick: false,
+        heightAuto: false,
+        didOpen: () => Swal.showLoading()
+    })
+
+    try {
+
+        const db = firebase.firestore()
+
+        // ========================================================
+        // DATAS
+        // ========================================================
+
+        const inicio =
+            parseDataInput(dataInicial)
+
+        inicio.setHours(0, 0, 0, 0)
+
+        const fim =
+            parseDataInput(dataFinal)
+
+        fim.setHours(23, 59, 59, 999)
+
+        const timestampInicio =
+            firebase.firestore.Timestamp.fromDate(
+                inicio
+            )
+
+        const timestampFim =
+            firebase.firestore.Timestamp.fromDate(
+                fim
+            )
+
+        const diferencaMs =
+            fim.getTime() -
+            inicio.getTime()
+
+        const diasPeriodo =
+            Math.max(
+                1,
+                Math.ceil(
+                    diferencaMs /
+                    (1000 * 60 * 60 * 24)
+                ) + 1
+            )
+
+        // ========================================================
+        // BUSCAR VENDAS
+        // ========================================================
+
+        const snapshotVendas =
+            await db.collection('vendas')
+                .where(
+                    'idLoja',
+                    '==',
+                    idLoja
+                )
+                .where(
+                    'criadoEm',
+                    '>=',
+                    timestampInicio
+                )
+                .where(
+                    'criadoEm',
+                    '<=',
+                    timestampFim
+                )
+                .get()
+
+        const vendasPorProduto = {}
+
+        snapshotVendas.forEach(doc => {
+
+            const venda = doc.data()
+
+            ;(venda.produtos || []).forEach(produto => {
+
+                const nome =
+                    normalizarNomeProduto(
+                        produto.nome
+                    )
+
+                const quantidade =
+                    Number(
+                        produto.quantidade
+                    ) || 0
+
+                if (!nome || quantidade <= 0) {
+                    return
+                }
+
+                vendasPorProduto[nome] =
+                    (
+                        vendasPorProduto[nome] ||
+                        0
+                    ) + quantidade
+
+            })
+
+        })
+
+        // ========================================================
+        // BUSCAR PRODUTOS
+        // ========================================================
+
+        const snapshotProdutos =
+            await db.collection('produtos')
+                .where(
+                    'idLoja',
+                    '==',
+                    idLoja
+                )
+                .get()
+
+        const listaRecomendada = []
+
+        snapshotProdutos.forEach(doc => {
+
+            const produto = doc.data()
+
+            // Ignora produtos que não controlam estoque
+            if (
+                produto.naoRastrearEstoque === true
+            ) {
+                return
+            }
+
+            if (
+                produto.estoque === 'none'
+            ) {
+                return
+            }
+
+            const nome =
+                normalizarNomeProduto(
+                    produto.nome
+                )
+
+            if (!nome) {
+                return
+            }
+
+            // Quantidade vendida no período
+            const quantidadeVendida =
+                Number(
+                    vendasPorProduto[nome]
+                ) || 0
+
+            // Produto sem venda não entra
+            if (quantidadeVendida <= 0) {
+                return
+            }
+
+            // ====================================================
+            // ESTOQUE
+            // ====================================================
+
+            const estoqueAtual =
+                Number(
+                    produto.estoque
+                ) || 0
+
+            const estoqueMinimo =
+                Number(
+                    produto.estoqueMinimo
+                ) || 0
+
+            // ====================================================
+            // MÉDIA DE VENDA
+            // ====================================================
+
+            const mediaDiaria =
+                quantidadeVendida /
+                diasPeriodo
+
+            // ====================================================
+            // DEMANDA PARA 7 DIAS
+            // ====================================================
+
+            const demanda7Dias =
+                mediaDiaria *
+                DIAS_COBERTURA
+
+            // ====================================================
+            // ESTOQUE ALVO
+            // ====================================================
+
+            const estoqueAlvo =
+                Math.max(
+                    estoqueMinimo,
+                    demanda7Dias
+                )
+
+            // ====================================================
+            // QUANTIDADE A COMPRAR
+            // ====================================================
+
+            const quantidadeComprar =
+                Math.max(
+                    0,
+                    Math.ceil(
+                        estoqueAlvo -
+                        estoqueAtual
+                    )
+                )
+
+            // Já possui estoque suficiente
+            if (quantidadeComprar <= 0) {
+                return
+            }
+
+            // ====================================================
+            // COBERTURA ATUAL
+            // ====================================================
+
+            const diasEstoque =
+                mediaDiaria > 0
+                    ? Math.max(
+                        0,
+                        estoqueAtual /
+                        mediaDiaria
+                    )
+                    : Infinity
+
+            // ====================================================
+            // PRIORIDADE
+            // ====================================================
+
+            let prioridade = 'NORMAL'
+            let prioridadeOrdem = 3
+
+            if (
+                estoqueAtual <=
+                estoqueMinimo
+            ) {
+
+                prioridade = 'URGENTE'
+                prioridadeOrdem = 1
+
+            } else if (
+                diasEstoque <=
+                DIAS_COBERTURA
+            ) {
+
+                prioridade = 'ATENÇÃO'
+                prioridadeOrdem = 2
+            }
+
+            // ====================================================
+            // VALOR
+            // ====================================================
+
+            const valorCompra =
+                Number(
+                    produto.valorCompra
+                ) || 0
+
+            const valorEstimado =
+                quantidadeComprar *
+                valorCompra
+
+            listaRecomendada.push({
+
+                id: doc.id,
+
+                nome:
+                    produto.nome ||
+                    'SEM NOME',
+
+                quantidadeVendida,
+
+                mediaDiaria,
+
+                estoqueAtual,
+
+                estoqueMinimo,
+
+                demanda7Dias,
+
+                estoqueAlvo,
+
+                quantidadeComprar,
+
+                diasEstoque,
+
+                prioridade,
+
+                prioridadeOrdem,
+
+                valorCompra,
+
+                valorEstimado
+
+            })
+
+        })
+
+        // ========================================================
+        // ORDENAR POR PRIORIDADE
+        // ========================================================
+
+        listaRecomendada.sort((a, b) => {
+
+            if (
+                a.prioridadeOrdem !==
+                b.prioridadeOrdem
+            ) {
+
+                return (
+                    a.prioridadeOrdem -
+                    b.prioridadeOrdem
+                )
+            }
+
+            return (
+                b.quantidadeVendida -
+                a.quantidadeVendida
+            )
+
+        })
+
+        // ========================================================
+        // NENHUMA REPOSIÇÃO
+        // ========================================================
+
+        if (!listaRecomendada.length) {
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Estoque em dia',
+                text: 'Nenhum produto precisa de reposição com base nas vendas e no estoque atual.',
+                heightAuto: false
+            })
+
+            return
+        }
+
+        // ========================================================
+        // TOTAIS
+        // ========================================================
+
+        const totalItens =
+            listaRecomendada.reduce(
+                (total, item) =>
+                    total +
+                    item.quantidadeComprar,
+                0
+            )
+
+        const valorTotalCompra =
+            listaRecomendada.reduce(
+                (total, item) =>
+                    total +
+                    item.valorEstimado,
+                0
+            )
+
+        const dataInicialFormatada =
+            inicio.toLocaleDateString(
+                'pt-BR'
+            )
+
+        const dataFinalFormatada =
+            fim.toLocaleDateString(
+                'pt-BR'
+            )
+
+        // ========================================================
+        // LISTA VISUAL MINIMALISTA
+        // ========================================================
+
+        const itensHtml =
+            listaRecomendada.map(item => {
+
+                let icone = '🟢'
+                let cor = '#4caf50'
+
+                if (
+                    item.prioridade ===
+                    'URGENTE'
+                ) {
+
+                    icone = '🔴'
+                    cor = '#ef4444'
+
+                } else if (
+                    item.prioridade ===
+                    'ATENÇÃO'
+                ) {
+
+                    icone = '🟠'
+                    cor = '#f59e0b'
+
+                }
+
+                return `
+
+                    <div style="
+                        padding:14px 0;
+                        border-bottom:1px solid rgba(255,255,255,.12);
+                    ">
+
+                        <div style="
+                            display:flex;
+                            align-items:flex-start;
+                            justify-content:space-between;
+                            gap:15px;
+                        ">
+
+                            <div style="
+                                min-width:0;
+                                flex:1;
+                            ">
+
+                                <div style="
+                                    font-size:1rem;
+                                    font-weight:700;
+                                    line-height:1.2;
+                                ">
+
+                                    ${icone}
+                                    ${item.nome}
+
+                                </div>
+
+                                <div style="
+                                    margin-top:7px;
+                                    font-size:.78rem;
+                                    color:#888;
+                                    line-height:1.5;
+                                ">
+
+                                    Vendidos:
+                                    ${item.quantidadeVendida}
+
+                                    &nbsp; • &nbsp;
+
+                                    Estoque:
+                                    ${item.estoqueAtual}
+
+                                    &nbsp; • &nbsp;
+
+                                    Mínimo:
+                                    ${item.estoqueMinimo}
+
+                                </div>
+
+                            </div>
+
+                            <div style="
+                                text-align:right;
+                                white-space:nowrap;
+                            ">
+
+                                <div style="
+                                    font-size:.72rem;
+                                    color:#999;
+                                    margin-bottom:3px;
+                                ">
+                                    COMPRAR
+                                </div>
+
+                                <div style="
+                                    font-size:1.15rem;
+                                    font-weight:800;
+                                    color:${cor};
+                                ">
+
+                                    ${item.quantidadeComprar}
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                `
+
+            }).join('')
+
+        // ========================================================
+        // RESULTADO
+        // ========================================================
+
+        Swal.fire({
+
+            customClass: {
+                popup: 'swal-tabela-popup'
+            },
+
+            heightAuto: false,
+
+            width: '600px',
+
+            showCancelButton: true,
+
+            confirmButtonText:
+                'Imprimir lista',
+
+            cancelButtonText:
+                'Fechar',
+
+            html: `
+
+                <div
+                    class="swal-tabela-wrap"
+                    style="
+                        text-align:left;
+                        padding-top:2px;
+                    "
+                >
+
+                    <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        align-items:end;
+                        gap:15px;
+                        margin-bottom:18px;
+                    ">
+
+                        <div>
+
+                            <h2
+                                class="swal-tabela-titulo"
+                                style="
+                                    font-size:1.25rem;
+                                    margin:0;
+                                "
+                            >
+                                REPOSIÇÃO RECOMENDADA
+                            </h2>
+
+                            <div style="
+                                font-size:.78rem;
+                                color:#888;
+                                margin-top:5px;
+                            ">
+
+                                ${dataInicialFormatada}
+                                até
+                                ${dataFinalFormatada}
+
+                            </div>
+
+                        </div>
+
+                        <div style="
+                            text-align:right;
+                            white-space:nowrap;
+                        ">
+
+                            <div style="
+                                font-size:.72rem;
+                                color:#888;
+                            ">
+                                ${listaRecomendada.length}
+                                produtos
+                            </div>
+
+                            <div style="
+                                font-size:.9rem;
+                                font-weight:700;
+                            ">
+                                ${totalItens}
+                                itens
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div style="
+                        max-height:450px;
+                        overflow-y:auto;
+                        padding-right:5px;
+                    ">
+
+                        ${itensHtml}
+
+                    </div>
+
+                    <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        align-items:center;
+                        margin-top:18px;
+                        padding-top:14px;
+                        border-top:1px solid rgba(255,255,255,.15);
+                    ">
+
+                        <span style="
+                            font-size:.8rem;
+                            color:#888;
+                        ">
+                            Investimento estimado
+                        </span>
+
+                        <strong style="
+                            font-size:1rem;
+                        ">
+
+                            ${valorTotalCompra.toLocaleString(
+                                'pt-BR',
+                                {
+                                    style:
+                                        'currency',
+                                    currency:
+                                        'BRL'
+                                }
+                            )}
+
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            `
+
+        }).then(result => {
+
+            if (result.isConfirmed) {
+
+                imprimirListaDeComprasRecomendada(
+                    listaRecomendada,
+                    dataInicialFormatada,
+                    dataFinalFormatada
+                )
+
+            }
+
+        })
+
+    } catch (error) {
+
+        console.error(
+            'Erro ao gerar lista recomendada:',
+            error
+        )
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro ao gerar lista',
+            text: error.message,
+            heightAuto: false
+        })
+    }
+}
+function normalizarNomeProduto(nome) {
+
+    return String(nome || '')
+        .normalize('NFD')
+        .replace(
+            /[\u0300-\u036f]/g,
+            ''
+        )
+        .replace(
+            /\s+/g,
+            ' '
+        )
+        .trim()
+        .toUpperCase()
+
+}
+
+function imprimirListaDeComprasRecomendada(
+    lista,
+    dataInicial,
+    dataFinal
+) {
+    const janela = window.open(
+        '',
+        '_blank',
+        'width=900,height=700'
+    )
+
+    if (!janela) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Popup bloqueado',
+            text: 'Permita pop-ups no navegador para imprimir a lista.',
+            heightAuto: false
+        })
+
+        return
+    }
+
+    const linhas = lista.map(item => `
+        <tr>
+            <td>${item.nome}</td>
+
+            <td style="text-align:center;">
+                ${item.estoqueAtual}
+            </td>
+
+            <td style="text-align:center;">
+                ${item.estoqueMinimo}
+            </td>
+
+            <td style="text-align:center;">
+                ${item.quantidadeVendida}
+            </td>
+
+            <td style="text-align:center;">
+                ${item.mediaDiaria.toFixed(2)}
+            </td>
+
+            <td style="
+                text-align:center;
+                font-weight:bold;
+            ">
+                ${item.quantidadeComprar}
+            </td>
+        </tr>
+    `).join('')
+
+    janela.document.write(`
+        <!DOCTYPE html>
+
+        <html lang="pt-BR">
+
+        <head>
+
+            <meta charset="UTF-8">
+
+            <title>
+                Lista de Reposição
+            </title>
+
+            <style>
+
+                * {
+                    box-sizing:border-box;
+                }
+
+                body {
+                    font-family:Arial,sans-serif;
+                    padding:30px;
+                    color:#111;
+                }
+
+                h1 {
+                    margin-bottom:5px;
+                }
+
+                .periodo {
+                    color:#666;
+                    margin-bottom:25px;
+                }
+
+                table {
+                    width:100%;
+                    border-collapse:collapse;
+                }
+
+                th,
+                td {
+                    border:1px solid #ccc;
+                    padding:10px;
+                }
+
+                th {
+                    background:#f2f2f2;
+                    text-align:left;
+                }
+
+                .rodape {
+                    margin-top:25px;
+                    font-size:13px;
+                    color:#666;
+                }
+
+                @media print {
+
+                    body {
+                        padding:0;
+                    }
+
+                    @page {
+                        margin:15mm;
+                    }
+
+                }
+
+            </style>
+
+        </head>
+
+        <body>
+
+            <h1>
+                LISTA DE REPOSIÇÃO RECOMENDADA
+            </h1>
+
+            <div class="periodo">
+                Período analisado:
+                ${dataInicial}
+                até
+                ${dataFinal}
+            </div>
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Produto</th>
+                        <th>Estoque</th>
+                        <th>Mínimo</th>
+                        <th>Vendidos</th>
+                        <th>Média/dia</th>
+                        <th>COMPRAR</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    ${linhas}
+
+                </tbody>
+
+            </table>
+
+            <div class="rodape">
+                Lista calculada automaticamente com base
+                nas vendas do período, estoque atual,
+                estoque mínimo e projeção de consumo.
+            </div>
+
+            <script>
+
+                window.onload = function() {
+                    window.print()
+                }
+
+            <\/script>
+
+        </body>
+
+        </html>
+    `)
+
+    janela.document.close()
+}
 
 verificarIdLoja()
 ultimasVendas()

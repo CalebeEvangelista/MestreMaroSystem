@@ -915,6 +915,30 @@ main section {
     width: 80%;
 }
 
+#shoppingList {
+    font-size: 30px;
+    background-color: yellow;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: black;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    cursor: pointer;
+    transition: all 300ms ease-in-out;
+}
+
+#shoppingList:hover {
+    transform: scale(1.2);
+    transition: all 300ms ease-in-out;
+}
+
+
+
 .produtos {
     display: none;
     overflow: auto;
@@ -1167,6 +1191,41 @@ tbody tr:nth-child(odd) {
     margin-bottom: 1em;
     transition: all 300ms ease-in-out;
 }
+
+.funcionarios {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.botoesFuncionarios {
+    display: flex;
+}
+
+.funcionarios button {
+    margin-top: 1em;
+    margin-left: 1em;
+    width: 110px;
+    height: 28px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    color: rgba(0, 0, 0, 0.8);
+    background: rgba(255, 247, 0, 0.85);
+    box-shadow: 0 2px 12px rgba(255, 247, 0, 0.2);
+    transition: all 250ms ease;
+}
+
+.funcionarios button:hover {
+    transform: scale(1.05);
+    background: rgba(255, 247, 0, 1);
+    box-shadow: 0 4px 20px rgba(255, 247, 0, 0.35);
+}
+
+
 
 .lojas .conteudo .direita {
     width: 60%;
@@ -2000,6 +2059,65 @@ tbody tr:nth-child(odd) {
     box-shadow: inset 0 0 0 1px rgba(34,197,94,0.24);
 }
 
+.swal-tabela-popup {
+    background: #161616 !important;
+    color: #f5f5f5 !important;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px !important;
+    width: 75vw !important;
+    max-width: 75vw !important;
+    padding: 0 !important;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+}
+
+.swal-tabela-wrap {
+    padding: 28px;
+    text-align: left;
+    max-height: 75vh;
+    overflow-y: auto;
+}
+
+.swal-tabela-titulo {
+    margin: 0 0 18px 0;
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.swal-tabela-funcionarios {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    table-layout: fixed;
+}
+
+.swal-tabela-funcionarios thead th {
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 10px;
+    font-size: 14px;
+    background: rgba(255,255,255,0.08);
+    color: #facc15;
+}
+
+.swal-tabela-funcionarios tbody td {
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 10px;
+    font-size: 14px;
+    word-break: break-word;
+}
+
+.swal-tabela-funcionarios tbody tr:nth-child(even) {
+    background: rgba(255,255,255,0.03);
+}
+
+@media (max-width: 768px) {
+    .swal-tabela-popup {
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
+    }
+}
+
 .swal-caixa-popup {
     background: #161616 !important;
     color: #f5f5f5 !important;
@@ -2161,6 +2279,8 @@ tbody tr:nth-child(odd) {
     background: rgba(34,197,94,0.14);
     color: #4ade80;
     box-shadow: inset 0 0 0 1px rgba(34,197,94,0.24);
+    width: 150px;
+    margin-bottom: 1em;
 }
 
 .swal-resumo-popup {
@@ -2574,6 +2694,11 @@ tbody tr:nth-child(odd) {
 
     * {
         box-sizing: border-box;
+    }
+
+    #shoppingList {
+        transform: scale(0.7);
+        top: 50px;
     }
 
     #compras, #produtos, #clientes, #lojas {

@@ -123,6 +123,7 @@
 
             <section id="visaoBaixo">
                 <div class="estoqueBaixo" id="estoqueBaixo">
+                    <i class="fa-solid fa-basket-shopping" id="shoppingList" onclick="gerarListaDeCompras()"></i>
                     <h1>ITENS COM ESTOQUE BAIXO:</h1>
                     <hr>
                     <section class="labelEstoqueBaixo" id="labelEstoqueBaixo"></div>
@@ -625,6 +626,12 @@
                     </div>
                     <label class="funcionarios">
                         <p>Funcionários cadastrados:</p>
+
+                        <div class="botoesFuncionarios">
+                            <button id="novoFuncionario" onclick="novoFuncionario()">NOVO</button>
+                            <button id="verFuncionarios" onclick="verFuncionarios()">VIZUALIZAR</button>
+                        </div>
+                        
                     </label>
                 </div>
                 <div class="direita">

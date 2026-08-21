@@ -342,5 +342,202 @@ function editarPix() {
     alert('Função em desenvolvimento.')
 }
 
+function novoFuncionario() {
+    Swal.fire({
+        html: `
+        <div class="swal-caixa-wrap">
+            <div class="swal-caixa-header">
+            <h2>Cadastrar funcionário</h2>
+            <p class="swal-caixa-subtitle">Preencha os dados abaixo</p>
+            </div>
+    
+            <div class="swal-caixa-section">
+            <div class="swal-caixa-section-head">
+                <span>Dados do funcionário</span>
+                <div class="swal-caixa-section-line"></div>
+            </div>
+    
+            <div class="swal-caixa-field">
+                <label>Nome</label>
+                <input id="func-nome" class="swal-caixa-input" type="text" placeholder="Ex: Maria Souza">
+            </div>
+    
+            <div class="swal-caixa-field">
+                <label>Cargo</label>
+                <select id="func-cargo" class="swal-caixa-input">
+                <option value="">Selecione um cargo</option>
+                <option value="Atendente">Atendente</option>
+                <option value="Caixa">Caixa</option>
+                <option value="Gerente">Gerente</option>
+                <option value="ADM">ADM</option>
+                </select>
+            </div>
+    
+            <div class="swal-caixa-field">
+                <label>E-mail</label>
+                <input id="func-email" class="swal-caixa-input" type="email" placeholder="funcionario@empresa.com">
+            </div>
+    
+            <div class="swal-caixa-field">
+                <label>Chave Pix</label>
+                <input id="func-pix" class="swal-caixa-input" type="text" placeholder="CPF, e-mail, telefone ou chave aleatória">
+            </div>
+            </div>
+        </div>
+        `,
+        customClass: {
+        popup: 'swal-caixa-popup',
+        cancelButton: 'swal-caixa-btn swal-caixa-btn-cancel',
+        confirmButton: 'swal-caixa-btn swal-caixa-btn-confirm',
+        actions: 'swal-caixa-footer'
+        },
+        buttonsStyling: false,
+        showCancelButton: true,
+        cancelButtonText: '<i class="fa-solid fa-xmark"></i>',
+        confirmButtonText: '<i class="fa-solid fa-check"></i>',
+        focusConfirm: false,
+        heightAuto: false,
+        preConfirm: () => {
+            const nome = document.getElementById('func-nome').value.trim();
+            const cargo = document.getElementById('func-cargo').value;
+            const email = document.getElementById('func-email').value.trim();
+            const pix = document.getElementById('func-pix').value.trim();
+            //Colocar o restante idLoja, dataCadastro, ultimoLogin e ID
+        
+            if (!nome) {
+                Swal.showValidationMessage('Informe o nome do funcionário');
+                return false;
+            }
+            if (!cargo) {
+                Swal.showValidationMessage('Selecione um cargo');
+                return false;
+            }
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                Swal.showValidationMessage('Informe um e-mail válido');
+                return false;
+            }
+            if (!pix) {
+                Swal.showValidationMessage('Informe a chave Pix');
+                return false;
+            }
+        
+            return { nome, cargo, email, pix };
+        }
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+        salvarFuncionario(result.value);
+    });
+    }
+    
+async function salvarFuncionario(dados) {
+    const db = firebase.firestore()
+    try {
+        const senha = 'maro123'
+
+        const userCredential = await firebase.auth().createUserWithEmailAndPassword(dados.email, senha);
+        const user = userCredential.user;
+        const idUser = user.uid;
+
+        const hoje = new Date();
+        const data = hoje.toLocaleDateString('pt-BR');
+
+        const novoFuncionario = {
+            nome: dados.nome,
+            cargo: dados.cargo,
+            idLoja: localStorage.getItem('selecaoLoja'),
+            dataCadastro: data,
+            id: idUser,
+            email: dados.email,
+            pix: dados.pix,
+            cadastradoPor: localStorage.getItem('userId'),
+            status: 'funcionario'
+        }
+
+        await db.collection('users').doc(novoFuncionario.id).set(novoFuncionario)
+    
+        Swal.fire({
+        icon: 'success',
+        title: 'Funcionário cadastrado!',
+        timer: 1500,
+        showConfirmButton: false,
+        heightAuto: false,
+        });
+    } catch (err) {
+        Swal.fire({
+        icon: 'error',
+        title: 'Erro ao salvar',
+        text: err.message
+        });
+    }
+}
+
+async function verFuncionarios() {
+  const db = firebase.firestore();
+  const idLoja = localStorage.getItem('selecaoLoja');
+
+  try {
+    const snapshot = await db.collection('users')
+      .where('idLoja', '==', idLoja)
+      .where('status', '==', 'funcionario')
+      .get();
+
+    let linhas = '';
+
+    if (snapshot.empty) {
+      linhas = `<tr><td colspan="5" style="text-align:center;">Nenhum funcionário cadastrado</td></tr>`;
+    } else {
+      snapshot.forEach(doc => {
+        const f = doc.data();
+        linhas += `
+          <tr>
+            <td>${f.nome || '-'}</td>
+            <td>${f.cargo || '-'}</td>
+            <td>${f.email || '-'}</td>
+            <td style="white-space:nowrap;">${f.pix || '-'}</td>
+            <td style="white-space:nowrap;">${f.dataCadastro || '-'}</td>
+          </tr>
+        `;
+      });
+    }
+
+    Swal.fire({
+      html: `
+        <div class="swal-tabela-wrap">
+          <h2 class="swal-tabela-titulo">Funcionários cadastrados</h2>
+          <table class="swal-tabela-funcionarios">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Cargo</th>
+                <th>E-mail</th>
+                <th style="white-space:nowrap;">Pix</th>
+                <th style="white-space:nowrap;">Cadastro</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${linhas}
+            </tbody>
+          </table>
+        </div>
+      `,
+      customClass: {
+        popup: 'swal-tabela-popup',
+        confirmButton: 'swal-caixa-btn swal-caixa-btn-confirm'
+      },
+      buttonsStyling: false,
+      showCancelButton: false,
+      confirmButtonText: 'Fechar',
+      heightAuto: false,
+    });
+
+  } catch (err) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Erro ao carregar funcionários',
+      text: err.message
+    });
+  }
+}
+
 mostrarDados()
 alterarTaxasPagamentos()

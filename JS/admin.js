@@ -120,6 +120,12 @@ async function completeInfos() {
     btnEdit.addEventListener('click', () => editarUsuario(usuario.id))
     botoesTd.appendChild(btnEdit)
 
+    const btnAtivar = document.createElement('button')
+    btnAtivar.textContent = 'Ativar'
+    btnAtivar.classList.add('btn', 'ativar')
+    btnAtivar.addEventListener('click', () => ativarUsuario(usuario.id))
+    botoesTd.appendChild(btnAtivar)
+
     tr.appendChild(botoesTd)
     tabela.appendChild(tr)
   })
@@ -264,6 +270,40 @@ async function editarUsuario(userId) {
       // Aqui você pode adicionar a lógica para Alterar/Excluir usuários adicionais
     }
   });
+}
+
+// Ativa o usuário: troca o status para 'ativo', independente do valor atual
+async function ativarUsuario(userId) {
+  const db = firebase.firestore();
+
+  const resultado = await Swal.fire({
+    title: 'Ativar usuário?',
+    text: 'O status desse usuário será alterado para "ativo".',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sim, ativar',
+    cancelButtonText: 'Cancelar'
+  });
+
+  if (!resultado.isConfirmed) return;
+
+  try {
+    await db.collection('users').doc(userId).update({
+      status: 'ativo'
+    });
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Usuário ativado',
+      timer: 1500,
+      showConfirmButton: false
+    });
+
+    completeInfos(); // recarrega a tabela
+  } catch (erro) {
+    console.error('Erro ao ativar usuário:', erro);
+    Swal.fire('Erro', 'Não foi possível ativar esse usuário.', 'error');
+  }
 }
 
 async function carregarTabelaPromocional() {

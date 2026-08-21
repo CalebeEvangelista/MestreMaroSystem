@@ -79,3 +79,7 @@
 - Feito algumas correções na função `atualizarEstoque` para validar corretamente que ta subtraindo o estoque
 - Colocado função que ao cancelar uma venda ele volta o estoque do produto que estava na venda
 - Colocado uma aba nova de preço de compra do produto na aba Produtos para melhor vizualização na hora de conferir
+
+## V0.5.2
+- Adicionado script de adição de funcionários e vizualização de funcionários ativos na loja;
+- Adicionado função de gerar lista de compras por periodo e itens vendidos;
