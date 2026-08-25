@@ -1,3 +1,23 @@
+async function bloquearAcesso() {
+
+    const idAlvo = 'uR8VejSPIUXR8ij3LyTIeQDt7vL2';
+
+    const usuario = firebase.auth().currentUser;
+
+    if (!usuario) {
+        window.location.href = 'login.html';
+        return false;
+    }
+
+    if (usuario.uid !== idAlvo) {
+        alert('Você não tem permissão para acessar esta página!');
+        window.location.href = 'index.html';
+        return false;
+    }
+
+    return true;
+}
+
 function openScreen(event, screenId) {
   document.querySelectorAll('.screen').forEach(screen => {
     screen.classList.remove('active');
@@ -16,7 +36,6 @@ function openScreen(event, screenId) {
     event.currentTarget.classList.add('active');
   }
 }
-
 
 function voltarSistema() {
     window.location.href = '/HTML/home.html';
@@ -46,7 +65,9 @@ async function completeInfos() {
 
     ativos += 1
 
-    const lojasArray = Array.isArray(user.lojas) ? user.lojas : Object.values(user.lojas)
+   const lojasArray = user.lojas
+    ? (Array.isArray(user.lojas) ? user.lojas : Object.values(user.lojas))
+    : [];
 
     let lojasNomes = ''
     if (lojasArray.length > 0) {

@@ -57,4 +57,5 @@ async function mostrarClientes() {
     })
 }
 
-mostrarClientes()
+// mostrarClientes() agora só roda quando a tela de Clientes é aberta
+// pela primeira vez (ver carregarDadosDaTela em home.js).

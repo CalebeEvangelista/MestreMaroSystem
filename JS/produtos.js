@@ -77,10 +77,6 @@ async function completeProducts() {
 
         tabela.appendChild(tr)
     });
-
-    console.log(listaNomes.join('\n'))
-    console.log(listaCompra.join('\n'))
-    console.log(listaVenda.join('\n'))
 }
 
 function abrirEditorDeProduto(docId) {
@@ -694,7 +690,8 @@ function cadastrarProduto() {
                 text: 'O produto foi salvo com sucesso.',
                 showConfirmButton: false,
                 timer: 1800,
-                timerProgressBar: true
+                timerProgressBar: true,
+                heightAuto: false,
             })
         })
         .catch((error) => {
@@ -966,4 +963,5 @@ async function salvarConferenciaNoBanco(listaConferencia) {
   return { atualizados, erros };
 }
 
-completeProducts()
+// completeProducts() agora só roda quando a tela de Produtos é aberta
+// pela primeira vez (ver carregarDadosDaTela em home.js).

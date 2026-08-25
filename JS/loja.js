@@ -539,5 +539,5 @@ async function verFuncionarios() {
   }
 }
 
-mostrarDados()
-alterarTaxasPagamentos()
+// mostrarDados() e alterarTaxasPagamentos() agora só rodam quando a tela
+// "Minha loja" é aberta pela primeira vez (ver carregarDadosDaTela em home.js).

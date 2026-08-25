@@ -1145,6 +1145,10 @@ tbody tr:nth-child(odd) {
     margin-top: 1em;
 }
 
+#lojas {
+    display: none;
+}
+
 .lojas {
     display: none;
     align-items: center;
@@ -2810,7 +2814,7 @@ tbody tr:nth-child(odd) {
     .pdv {
         padding: 0.5em;
         width: 95%;
-        height: 60vh;
+        height: 100%;
         align-items: center;
     }
 
@@ -2824,6 +2828,7 @@ tbody tr:nth-child(odd) {
 
     .tableContainer {
         width: 90%;
+        min-height: 40vh;
         max-height: 15vh;
         overflow-x: auto;
         overflow-y: auto;
@@ -2848,8 +2853,11 @@ tbody tr:nth-child(odd) {
         align-items: center;
     }
 
+    .somas {
+        z-index: 9999;
+    }
+
     .somas .campo {
-        width: 90%;
         grid-column: span 6; /* CORRIGIDO: era span 6 */
     }
 
@@ -2899,6 +2907,10 @@ tbody tr:nth-child(odd) {
     #addItem, #cancelarVenda, #finalizarVenda {
         height: 70px;
         width: 50px !important;
+    }
+    
+    #resumosPC {
+        display: none
     }
 
     /* ===== PAGAMENTO ===== */
@@ -3035,6 +3047,7 @@ tbody tr:nth-child(odd) {
     }
 
     /* ===== LOJAS ===== */
+
     .lojas .conteudo {
         flex-direction: column;
         width: 100%;

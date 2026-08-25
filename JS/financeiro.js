@@ -530,10 +530,9 @@ function Loading() {
     loading.classList.toggle('ativo')
 }
 
-
-
-vendasPorMeio()
-lucrosPorDia()
-faturamentoPorDia()
-resumoSemanal()
-saudeMensal()
+// vendasPorMeio(), lucrosPorDia(), faturamentoPorDia(), resumoSemanal() e
+// saudeMensal() agora só rodam quando a tela Financeiro é aberta pela
+// primeira vez (ver carregarDadosDaTela em home.js). Isso também corrige um
+// problema à parte: resumoSemanal() cria o gráfico do ApexCharts dentro de
+// #grafico, e antes isso acontecia com a aba ainda escondida (display:none),
+// o que podia fazer o gráfico nascer com tamanho errado.

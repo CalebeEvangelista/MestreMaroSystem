@@ -1460,6 +1460,7 @@ async function abrirResumoCaixa() {
     Swal.fire({
         customClass: { popup: 'swal-resumo-popup' },
         showConfirmButton: false,
+        heightAuto: false,
         html: `
             <div class="swal-resumo-wrap">
 
@@ -1533,6 +1534,7 @@ function abrirFecharCaixa(totalDinheiro, totalEmVendas) {
     Swal.fire({
         customClass: { popup: 'swal-fechar-popup' },
         showConfirmButton: false,
+        heightAuto: false,
         html: `
             <div class="swal-fechar-wrap">
 
@@ -1656,7 +1658,7 @@ async function confirmarFechamentoCaixa(totalDinheiro, totalEmVendas) {
 // ─────────────────────────────────────────────
 // INICIALIZAÇÃO
 // ─────────────────────────────────────────────
-verificarCaixa()
-addDataListDados();
-autoComplete();
-mostrarCashbackDisponivel(); // 🔵 FIX 10: chamada que estava faltando
+// verificarCaixa(), addDataListDados() e autoComplete() agora só rodam quando
+// a tela do PDV é aberta pela primeira vez (ver carregarDadosDaTela em home.js).
+// mostrarCashbackDisponivel() já é chamada em home.js na inicialização, então
+// não precisa ser chamada de novo aqui (evita registrar o listener duas vezes).

@@ -83,3 +83,12 @@
 ## V0.5.2
 - Adicionado script de adição de funcionários e vizualização de funcionários ativos na loja;
 - Adicionado função de gerar lista de compras por periodo e itens vendidos;
+
+## V0.5.3
+- Ajustada a função de login pra quando o sistema identificar que quando se trata de um funcionário ele já logar jogando na loja correta
+- Removido resumos da versão desktop pois estavam bugando a visualização além de não ter uso
+- Arrumado também a vizualização dos botões que por algum motivo estavam sendo escondidos
+- Ajustada a otimização das páginas para um carregamento mais rápido
+- Resolvido problema critico na criação dos novos usuarios, onde criava o usuario e a loja mas não colocava ID na loja, sendo assim tornando ela inutilizavel
+- Arrumado um probleminha na pagina de ADM
+- Arrumado um mini-bug na hora de excluir uma venda, que tava conflitando com uma proteção para os funcionários não excluirem vendas

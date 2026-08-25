@@ -1,4 +1,3 @@
-
 function logout() {
     firebase.auth().signOut()
     .then(() => {
@@ -64,6 +63,64 @@ async function alterarMeta(tipoMeta){
     })
 }
 
+// ─────────────────────────────────────────────
+// CARREGAMENTO SOB DEMANDA (LAZY LOAD) DAS TELAS
+// ─────────────────────────────────────────────
+// Antes, TODAS as telas (produtos, compras, clientes, financeiro, lojas, pdv)
+// carregavam seus dados do Firestore e montavam suas tabelas assim que a página
+// abria, mesmo estando escondidas por CSS. Isso significava dezenas de leituras
+// no Firestore e a montagem de várias tabelas inteiras acontecendo ao mesmo
+// tempo, competindo com o carregamento da Visão Geral (que é a tela padrão).
+//
+// Agora cada tela só carrega seus dados na PRIMEIRA VEZ que o usuário realmente
+// clica nela. O Set abaixo controla quais telas já foram carregadas, pra não
+// ficar buscando tudo de novo toda vez que o usuário troca de aba.
+const _telasCarregadas = new Set(['visao']) // "visao" já carrega sozinha no fim deste arquivo
+
+function carregarDadosDaTela(screenClass) {
+    if (_telasCarregadas.has(screenClass)) return
+    _telasCarregadas.add(screenClass)
+
+    switch (screenClass) {
+        case 'pdv':
+            // Definidas em pdv.js
+            if (typeof verificarCaixa === 'function') verificarCaixa()
+            if (typeof addDataListDados === 'function') addDataListDados()
+            if (typeof autoComplete === 'function') autoComplete()
+            break
+
+        case 'produtos':
+            // Definida em produtos.js
+            if (typeof completeProducts === 'function') completeProducts()
+            break
+
+        case 'compras':
+            // Definida em compras.js
+            if (typeof gerarTabelaCompras === 'function') gerarTabelaCompras()
+            break
+
+        case 'clientes':
+            // Definida em clientes.js
+            if (typeof mostrarClientes === 'function') mostrarClientes()
+            break
+
+        case 'financeiro':
+            // Definidas em financeiro.js
+            if (typeof vendasPorMeio === 'function') vendasPorMeio()
+            if (typeof lucrosPorDia === 'function') lucrosPorDia()
+            if (typeof faturamentoPorDia === 'function') faturamentoPorDia()
+            if (typeof resumoSemanal === 'function') resumoSemanal()
+            if (typeof saudeMensal === 'function') saudeMensal()
+            break
+
+        case 'lojas':
+            // Definidas em loja.js
+            if (typeof mostrarDados === 'function') mostrarDados()
+            if (typeof alterarTaxasPagamentos === 'function') alterarTaxasPagamentos()
+            break
+    }
+}
+
 function openScreen(screenClass) {
 
     // pega todas as sections do main
@@ -79,10 +136,67 @@ function openScreen(screenClass) {
     if (screen) {
         screen.style.display = 'flex';
     }
+
+    // carrega os dados dessa tela, só na primeira vez que ela é aberta
+    carregarDadosDaTela(screenClass)
+}
+
+// ─────────────────────────────────────────────
+// CACHE COMPARTILHADO DE VENDAS DO MÊS (Visão Geral)
+// ─────────────────────────────────────────────
+// Antes, calcularMetas() baixava a coleção "vendas" INTEIRA (todas as lojas,
+// todo o histórico) sem nenhum filtro, e resumoDia()/top5ProdutosMaisVendidos()
+// faziam mais uma leitura completa cada uma, só da loja atual mas sem limite
+// de data. Isso baixava cada vez mais dados conforme a loja crescia.
+//
+// Agora existe uma única busca, filtrada por idLoja + intervalo do mês atual
+// (usando o timestamp "criadoEm", igual já é feito em financeiro.js), e o
+// resultado fica em cache/memoizado: se duas funções pedirem os dados quase
+// ao mesmo tempo (como acontece na inicialização da tela), a segunda reaproveita
+// a mesma consulta em andamento em vez de disparar outra leitura no Firestore.
+let _cacheVendasVisaoGeral = null
+
+function limparCacheVisaoGeral() {
+    _cacheVendasVisaoGeral = null
+}
+
+async function buscarVendasDoMesAtual() {
+    const idLoja = localStorage.getItem('selecaoLoja')
+    if (!idLoja) return []
+
+    if (_cacheVendasVisaoGeral && _cacheVendasVisaoGeral.idLoja === idLoja) {
+        return _cacheVendasVisaoGeral.promise
+    }
+
+    const db = firebase.firestore()
+
+    const agora = new Date()
+    const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1)
+    inicioMes.setHours(0, 0, 0, 0)
+    const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0)
+    fimMes.setHours(23, 59, 59, 999)
+
+    const timestampInicio = firebase.firestore.Timestamp.fromDate(inicioMes)
+    const timestampFim = firebase.firestore.Timestamp.fromDate(fimMes)
+
+    const promise = db.collection('vendas')
+        .where('idLoja', '==', idLoja)
+        .where('criadoEm', '>=', timestampInicio)
+        .where('criadoEm', '<=', timestampFim)
+        .get()
+        .then(snapshot => snapshot.docs.map(doc => doc.data()))
+        .catch(error => {
+            console.error('Erro ao buscar vendas do mês:', error)
+            limparCacheVisaoGeral()
+            return []
+        })
+
+    _cacheVendasVisaoGeral = { idLoja, promise }
+
+    return promise
 }
 
 async function calcularMetas() {
-    //VENDAS DO DIA
     const vendasDia = document.getElementById('vendasDia');
     const qtdVendasDia = document.getElementById('qtdVendasDia');
     const ticketDia = document.getElementById('ticketDia');
@@ -90,65 +204,6 @@ async function calcularMetas() {
     const progressDia = document.getElementById('progressDia')
     const progressToday = document.getElementById('progressToday')
 
-    let valorVendidoDia = 0;
-    let quantidaDeVendasDia = 0;
-    let ticketMedioDia = 0;
-
-    const db = firebase.firestore();
-
-    const snapshot = await db
-        .collection("vendas")
-        .get()
-
-    if (snapshot.empty) {
-        vendasDia.innerHTML = "R$ 0,00";
-        qtdVendasDia.innerHTML = "0 Vendas";
-        ticketDia.innerHTML = "R$ 0,00";
-        return;
-    }
-
-    const dataAgora = new Date()
-    const dataHoje = dataAgora.toLocaleString('pt-BR').split(',')
-
-    snapshot.forEach(doc => {
-        const dados = doc.data();
-        const totalVenda = Number(dados.totalVenda) || 0;
-
-        const dataSplit = dados.data.split(',')
-
-        if(dataSplit[0] == dataHoje[0] && dados.idLoja == localStorage.getItem('selecaoLoja')){
-            valorVendidoDia += totalVenda;
-            quantidaDeVendasDia += 1;
-        }
-    });
-
-    if (quantidaDeVendasDia > 0) {
-        ticketMedioDia = valorVendidoDia / quantidaDeVendasDia;
-    }
-
-    const idLoja = localStorage.getItem('selecaoLoja')
-
-    const meta = await db.collection("metas").where('idLoja', '==', idLoja).get()
-    let metaDoDia = 0
-    let metaDoMes = 0
-
-    meta.forEach(doc => {
-        const dados = doc.data()
-        metaDoDia = Number(dados.metaDia)
-        metaDoMes = Number(dados.metaMes)
-    })
-
-    const porcentagemMetaDia = ((valorVendidoDia / metaDoDia) * 100).toFixed(2)
-    const porcentagemFinal = (Math.min(Math.max(porcentagemMetaDia, 0), 100)).toFixed(2)
-
-    metaDaqueleDia.textContent = 'R$ ' + metaDoDia.toFixed(2).replace('.', ',')
-    vendasDia.textContent = 'R$ ' + valorVendidoDia.toFixed(2).replace('.', ',');
-    qtdVendasDia.textContent = quantidaDeVendasDia + ' Vendas';
-    ticketDia.textContent = 'R$ ' + ticketMedioDia.toFixed(2).replace('.', ',');
-    progressDia.style.width = porcentagemFinal + '%';
-    progressToday.textContent = porcentagemFinal + '%'
-
-    //VENDAS DO MÊS
     const vendasMes = document.getElementById('vendasMes');
     const qtdVendasMes = document.getElementById('qtdVendasMes');
     const ticketMes = document.getElementById('ticketMes');
@@ -157,59 +212,77 @@ async function calcularMetas() {
     const progressMonth = document.getElementById('progressMonth')
     const mesDoAnoCorrente = document.getElementById('mesDoAno')
 
-    let valorVendido = 0;
-    let quantidaDeVendas = 0;
-    let ticketMedio = 0;
+    const idLoja = localStorage.getItem('selecaoLoja')
+    if (!idLoja) return
 
-    const snapshot2 = await db
-        .collection("vendas")
-        .get()
+    const db = firebase.firestore()
 
-    if (snapshot.empty) {
-        vendasMes.innerHTML = "R$ 0,00";
-        qtdVendasMes.innerHTML = "0 Vendas";
-        ticketMes.innerHTML = "R$ 0,00";
-        return;
-    }
+    const dataAgora = new Date()
+    const dataHoje = dataAgora.toLocaleDateString('pt-BR')
+    const nomeMes = dataAgora.toLocaleString('pt-BR', { month: 'long' })
+    mesDoAnoCorrente.textContent = nomeMes.toLocaleUpperCase()
 
-    snapshot.forEach(doc => {
-        const dados = doc.data();
-        const totalVenda = Number(dados.totalVenda) || 0;
+    try {
+        const [vendasDoMes, metaSnapshot] = await Promise.all([
+            buscarVendasDoMesAtual(),
+            db.collection('metas').where('idLoja', '==', idLoja).get()
+        ])
 
-        const dataSplit = dados.data.split(',')
-        const dataSplitada = dataSplit[0].split('/')
+        let metaDoDia = 0
+        let metaDoMes = 0
 
-        const mesDoAno = dataAgora.getMonth() + 1
-
-        const nomeMes = dataAgora.toLocaleString('pt-BR', {
-            month: 'long'
+        metaSnapshot.forEach(doc => {
+            const dados = doc.data()
+            metaDoDia = Number(dados.metaDia) || 0
+            metaDoMes = Number(dados.metaMes) || 0
         })
 
-        mesDoAnoCorrente.textContent = nomeMes.toLocaleUpperCase()
+        let valorVendidoDia = 0
+        let quantidaDeVendasDia = 0
+        let valorVendido = 0
+        let quantidaDeVendas = 0
 
-        if(mesDoAno == Number(dataSplitada[1]) && dados.idLoja == localStorage.getItem('selecaoLoja')){
-            valorVendido += totalVenda;
-            quantidaDeVendas += 1;
-        }
-    });
+        // Uma única passada pelos dados do mês já calcula dia + mês juntos
+        vendasDoMes.forEach(dados => {
+            const totalVenda = Number(dados.totalVenda) || 0
 
-    if (quantidaDeVendas > 0) {
-        ticketMedio = valorVendido / quantidaDeVendas;
+            valorVendido += totalVenda
+            quantidaDeVendas += 1
+
+            if (dados.data === dataHoje) {
+                valorVendidoDia += totalVenda
+                quantidaDeVendasDia += 1
+            }
+        })
+
+        const ticketMedioDia = quantidaDeVendasDia > 0 ? valorVendidoDia / quantidaDeVendasDia : 0
+        const ticketMedio = quantidaDeVendas > 0 ? valorVendido / quantidaDeVendas : 0
+
+        const porcentagemFinal = metaDoDia > 0
+            ? Math.min(Math.max((valorVendidoDia / metaDoDia) * 100, 0), 100).toFixed(2)
+            : '0.00'
+
+        const porcentagemFinalMes = metaDoMes > 0
+            ? Math.min(Math.max((valorVendido / metaDoMes) * 100, 0), 100).toFixed(2)
+            : '0.00'
+
+        metaDaqueleDia.textContent = 'R$ ' + metaDoDia.toFixed(2).replace('.', ',')
+        vendasDia.textContent = 'R$ ' + valorVendidoDia.toFixed(2).replace('.', ',');
+        qtdVendasDia.textContent = quantidaDeVendasDia + ' Vendas';
+        ticketDia.textContent = 'R$ ' + ticketMedioDia.toFixed(2).replace('.', ',');
+        progressDia.style.width = porcentagemFinal + '%';
+        progressToday.textContent = porcentagemFinal + '%'
+
+        metaMes.textContent = 'R$ ' + metaDoMes.toFixed(2).replace('.', ',')
+        vendasMes.textContent = 'R$ ' + valorVendido.toFixed(2).replace('.', ',');
+        qtdVendasMes.textContent = quantidaDeVendas + ' Vendas';
+        ticketMes.textContent = 'R$ ' + ticketMedio.toFixed(2).replace('.', ',');
+        progressMes.style.width = porcentagemFinalMes + '%';
+        progressMonth.textContent = porcentagemFinalMes + '%'
+
+    } catch (error) {
+        console.error('Erro ao calcular metas:', error)
     }
-
-    metaMes.innerHTML = 'R$ ' + metaDoMes.toFixed(2).replace('.', ',')
-
-    vendasMes.innerHTML = 'R$ ' + valorVendido.toFixed(2).replace('.', ',');
-    qtdVendasMes.innerHTML = quantidaDeVendas + ' Vendas';
-    ticketMes.innerHTML = 'R$ ' + ticketMedio.toFixed(2).replace('.', ',');
-
-    const porcentagemMeta = ((valorVendido / metaDoMes) * 100).toFixed(2)
-
-    const porcentagemFinalMes = Math.min(Math.max(porcentagemMeta, 0), 100);
-
-    progressMes.style.width = porcentagemFinalMes + '%';
-
-    progressMonth.innerHTML = porcentagemFinalMes + '%'
 }
 
 async function atualizarEstoque(produtos, loja) {
@@ -270,58 +343,56 @@ function fecharTelaCadastro() {
 
 // FUNÇÃO PARA MOSTRAR ULTIMAS VENDAS
 async function ultimasVendas() {
-    const ultimasVendas = document.getElementById('ultimasVendas')
-
-    const db = firebase.firestore();
+    const container = document.getElementById('ultimasVendas')
 
     const idLoja = localStorage.getItem('selecaoLoja')
+    if (!idLoja) return
 
-    const snapshot = await db
-    .collection('vendas')
-    .where('idLoja','==', idLoja)
-    .orderBy('criadoEm','desc')
-    .limit(6)
-    .get()
+    try {
+        const db = firebase.firestore();
 
-    snapshot.forEach(doc => {
-        const dados = doc.data()
+        const snapshot = await db
+            .collection('vendas')
+            .where('idLoja', '==', idLoja)
+            .orderBy('criadoEm', 'desc')
+            .limit(6)
+            .get()
 
-        const label = document.createElement('label')
+        const fragment = document.createDocumentFragment()
 
-        const horario = document.createElement('p')
-        horario.innerHTML = dados.hora
-        label.appendChild(horario)
+        snapshot.forEach(doc => {
+            const dados = doc.data()
 
-        const cliente = document.createElement('p')
-        cliente.innerHTML = dados.cliente
-        label.appendChild(cliente)
+            const label = document.createElement('label')
 
-        const valor = document.createElement('p')
-        valor.innerHTML = 'R$' + dados.totalVenda.toFixed(2).replace('.',',')
-        label.appendChild(valor)
+            const horario = document.createElement('p')
+            horario.textContent = dados.hora
+            label.appendChild(horario)
 
-        const data = dados.data.split('/')
+            const cliente = document.createElement('p')
+            cliente.textContent = dados.cliente
+            label.appendChild(cliente)
 
-        const diaVenda = Number(data[0])
-        const mesVenda = Number(data[1])
+            const valor = document.createElement('p')
+            valor.textContent = 'R$' + Number(dados.totalVenda || 0).toFixed(2).replace('.', ',')
+            label.appendChild(valor)
 
-        const agora = new Date()
-        const dia = agora.getDate()
-        const mes = agora.getMonth() + 1
+            const i = document.createElement('i')
+            i.classList.add('fa-solid')
+            i.classList.add('fa-eye')
+            i.setAttribute('onclick', 'verResumoVenda("' + dados.idVenda + '")')
+            label.appendChild(i)
 
-        const i = document.createElement('i')
-        i.classList.add('fa-solid')
-        i.classList.add('fa-eye')
-        i.setAttribute('onclick', 'verResumoVenda("' + dados.idVenda + '")')
-        label.appendChild(i)
+            fragment.appendChild(label)
+        })
 
-        const idLojaa = localStorage.getItem('selecaoLoja')
+        // A query já filtra por idLoja, então não é preciso reconferir no loop.
+        // Um único appendChild evita reflow a cada venda renderizada.
+        container.appendChild(fragment)
 
-        if (String(dados.idLoja) === idLojaa) {
-            ultimasVendas.appendChild(label)
-        }
-    })
-    
+    } catch (error) {
+        console.error('Erro ao carregar últimas vendas:', error)
+    }
 }
 
 // FUNÇÃO PARA VER A VENDA SELECIONADA
@@ -499,6 +570,11 @@ async function verResumoVenda(idVenda) {
 
         if (result.dismiss === Swal.DismissReason.cancel) {
 
+            if (await funcionarioBlock()) {
+                alert('Você não tem permissão pra excluir uma venda!');
+                return;
+            }
+
         const { value: senha } = await Swal.fire({
             title: "Cancelar venda",
             text: "Digite a senha para cancelar a venda",
@@ -626,38 +702,40 @@ function reloadVisaoGeral() {
 
 async function estoqueBaixo() {
     const idLoja = localStorage.getItem('selecaoLoja')
+    if (!idLoja) return
 
-    const db = firebase.firestore();
-    const snapshot = await db.collection('produtos').where('idLoja', '==', idLoja).orderBy('estoque', 'desc').get()
+    const container = document.getElementById('labelEstoqueBaixo')
 
-    var lista = []
+    try {
+        const db = firebase.firestore();
+        const snapshot = await db.collection('produtos').where('idLoja', '==', idLoja).orderBy('estoque', 'desc').get()
 
-    snapshot.forEach(doc => {
-        const dados = doc.data();
+        const fragment = document.createDocumentFragment()
 
-        if(dados.estoque <= dados.estoqueMinimo) {
-            const estoqueBaixo = document.getElementById('labelEstoqueBaixo')
+        snapshot.forEach(doc => {
+            const dados = doc.data();
 
-            const label = document.createElement('label')
+            if (dados.estoque <= dados.estoqueMinimo) {
+                const label = document.createElement('label')
 
-            const nomeProduto = document.createElement('p')
-            nomeProduto.setAttribute('id', 'nomeProdutoEstoqueBaixo')
-            nomeProduto.innerHTML = dados.nome
-            label.appendChild(nomeProduto)
+                const nomeProduto = document.createElement('p')
+                nomeProduto.setAttribute('id', 'nomeProdutoEstoqueBaixo')
+                nomeProduto.textContent = dados.nome
+                label.appendChild(nomeProduto)
 
-            const unidades = document.createElement('p')
-            unidades.innerHTML = dados.estoque + ' UNDs'
-            label.appendChild(unidades)
+                const unidades = document.createElement('p')
+                unidades.textContent = dados.estoque + ' UNDs'
+                label.appendChild(unidades)
 
-            estoqueBaixo.appendChild(label)
+                fragment.appendChild(label)
+            }
+        })
 
-            lista.push({nome: dados.nome})
-        }
-    })
+        // Um único appendChild no DOM real, em vez de um por produto
+        container.appendChild(fragment)
 
-    if(lista.length > 0) {
-        const nomes = lista.map(item => item.nome).join('\n')
-        console.log('Produtos com estoque baixo:\n\n' + nomes)
+    } catch (error) {
+        console.error('Erro ao carregar estoque baixo:', error)
     }
 }
 
@@ -730,6 +808,11 @@ async function verificarLojas() {
 
     console.log(dados);
 
+    if (dados.status == 'funcionario'){
+        alert('ele é funcionário da loja -->' + dados.idLoja)
+        
+    }
+
     if (dados.lojas && Array.isArray(dados.lojas) && dados.lojas.length > 0) {
 
     } else {
@@ -744,6 +827,10 @@ async function verificarLojas() {
 
 //Função para criar nova loja
 async function adicionarLoja() {
+    if (funcionarioBlock()){
+        return
+    }
+
     await Swal.fire({
         width: '920px',
         showConfirmButton: false,
@@ -906,6 +993,10 @@ async function adicionarLoja() {
 }
 
 async function excluirLoja(idLoja, nomeLoja, cargo) {
+    if (funcionarioBlock()){
+        return
+    }
+
     const { value: senha } = await Swal.fire({
         title: 'Excluir loja',
         html: `
@@ -1031,98 +1122,66 @@ async function top5ProdutosMaisVendidos() {
 
 async function resumoDia() {
     const idLoja = localStorage.getItem('selecaoLoja')
-    const db = firebase.firestore();
-    const snapshot = await db.collection("vendas").where('idLoja', '==', idLoja).get();
+    if (!idLoja) return
 
     const maiorVenda = document.getElementById('maiorVenda')
     const itemMaisVendido = document.getElementById('itemMaisVendido')
     const clienteTop = document.getElementById('clienteTop')
 
-    var rankingVendas = []
-    var rankingProdutos = []
-    var rankingClientes = []
+    const hoje = new Date().toLocaleDateString('pt-BR')
 
-    const data = new Date()
-    const hoje = data.toLocaleDateString('pt-BR');
+    try {
+        // Reaproveita o mesmo cache de "vendas do mês" usado em calcularMetas().
+        // Antes essa função fazia sua PRÓPRIA busca completa em "vendas" da loja
+        // (sem limite de data), o que ficava mais lento a cada venda registrada.
+        const vendasDoMes = await buscarVendasDoMesAtual()
+        const vendasHoje = vendasDoMes.filter(venda => venda.data === hoje)
 
-    var contagem = {};
-    var gastoClientes = {};
+        const rankingVendas = []
+        const agrupadoProdutos = {}
+        const gastoClientes = {}
 
-    snapshot.forEach(vendas => {
-        const venda = vendas.data()
-        //Encontra as vendas de hoje
-        if(venda.data != hoje) return
+        vendasHoje.forEach(venda => {
+            rankingVendas.push(Number(venda.totalVenda) || 0)
 
-        //Coleta os dados e registro nos rankings
-        venda.produtos.forEach(produto => {
-            rankingProdutos.push({
-                produto: produto.nome, 
-                qtdVendidos: produto.quantidade
-            })            
+            ;(venda.produtos || []).forEach(produto => {
+                const nome = produto.nome
+                const qtd = Number(produto.quantidade) || 0
+                agrupadoProdutos[nome] = (agrupadoProdutos[nome] || 0) + qtd
+            })
+
+            if (venda.cliente && venda.cliente != 'Sem Nome') {
+                gastoClientes[venda.cliente] = (gastoClientes[venda.cliente] || 0) + (Number(venda.totalVenda) || 0)
+            }
         })
 
-        rankingVendas.push(venda.totalVenda)
+        // Rankeia o produto mais vendido
+        const rankingFinal = Object.entries(agrupadoProdutos)
+            .sort((a, b) => b[1] - a[1])
 
-        if(venda.cliente && venda.cliente != 'Sem Nome') {
-            rankingClientes.push(venda.cliente)
+        // Rankeia cliente que mais gastou
+        const rankingPorGasto = Object.entries(gastoClientes)
+            .sort((a, b) => b[1] - a[1])
 
-            if(!gastoClientes[venda.cliente]) {
-                gastoClientes[venda.cliente] = 0
-            }
+        // Rankeia as vendas da maior pra menor
+        rankingVendas.sort((a, b) => b - a)
 
-            gastoClientes[venda.cliente] += Number(venda.totalVenda) || 0
-        }
-    })
+        //Joga os resultados no HTML
+        maiorVenda.textContent = rankingVendas.length
+            ? 'R$ ' + Number(rankingVendas[0]).toFixed(2).replace('.', ',')
+            : 'R$ 0,00'
 
-    rankingClientes.forEach(nome => {
-        contagem[nome] = (contagem[nome] || 0) + 1;
-    });
+        itemMaisVendido.textContent = rankingFinal.length
+            ? rankingFinal[0][0].toLowerCase().replace(/\b\w/g, letra => letra.toUpperCase())
+            : '—'
 
-    const rankingFinalClientes = Object.entries(contagem)
-        .map(([cliente, qtdCompras]) => ({
-            cliente,
-            qtdCompras
-        }))
-        .sort((a, b) => b.qtdCompras - a.qtdCompras);
+        clienteTop.textContent = rankingPorGasto.length
+            ? rankingPorGasto[0][0]
+            : '—'
 
-    // Rankeia cliente que mais gastou
-    const rankingPorGasto = Object.entries(gastoClientes)
-        .map(([cliente, totalGasto]) => ({
-            cliente,
-            totalGasto
-        }))
-        .sort((a, b) => b.totalGasto - a.totalGasto);
-
-    // Rankeia o produto mais vendido
-    const agrupado = {};
-    rankingProdutos.forEach(item => {
-        const nome = item.produto;
-        if (!agrupado[nome]) {
-            agrupado[nome] = 0;
-        }
-        agrupado[nome] += item.qtdVendidos;
-    });
-
-    const rankingFinal = Object.entries(agrupado)
-        .map(([produto, total]) => ({
-            produto,
-            qtdVendidos: total
-        }))
-        .sort((a, b) => b.qtdVendidos - a.qtdVendidos);
-
-    // Rankeia as vendas da maior pra menor
-    rankingVendas.sort((a, b) => b - a);
-
-    //Joga os resultados no HTML
-    maiorVenda.textContent = rankingVendas.length
-        ? 'R$ ' + Number(rankingVendas[0]).toFixed(2).replace('.', ',')
-        : 'R$ 0,00'
-
-    itemMaisVendido.textContent = rankingFinal[0]?.produto.toLowerCase().replace(/\b\w/g, letra => letra.toUpperCase()) || '—'
-
-    clienteTop.textContent = rankingPorGasto.length
-        ? `${rankingPorGasto[0].cliente}`
-        : '—'
+    } catch (error) {
+        console.error('Erro ao gerar resumo do dia:', error)
+    }
 }
 
 async function verificarDB() {
@@ -2203,6 +2262,7 @@ async function gerarListaDeComprasRecomendada(
         })
     }
 }
+
 function normalizarNomeProduto(nome) {
 
     return String(nome || '')
@@ -2403,12 +2463,33 @@ function imprimirListaDeComprasRecomendada(
     janela.document.close()
 }
 
+//Funcão pra bloquear algum acesso caso seja funcionario
+async function funcionarioBlock() {
+
+    const id = localStorage.getItem('userId')
+
+    const db = firebase.firestore()
+    const doc = await db.collection('users').doc(id).get();
+    const dados = doc.data();
+
+    if (dados.status === 'funcionario') {
+        return true;
+    }
+
+    return false;
+}
+
+async function removerItensPorCargo() {
+    
+}
+
 verificarIdLoja()
+removerItensPorCargo()
 ultimasVendas()
 calcularMetas()
+estoqueBaixo()
+resumoDia()
 calcularValorTotal()
 itensQuantidades()
 reloadVisaoGeral()
-estoqueBaixo()
 mostrarCashbackDisponivel()
-resumoDia()

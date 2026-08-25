@@ -43,13 +43,26 @@ function cadastrarNovoUsuario(nome, nomeLoja, email, senha) {
 }
 
 function enviarDadosProBD(id, nome, nomeLoja, email) {
+    const db = firebase.firestore()
+
+    const lojaRef = db.collection('lojas').doc();
+    const idLoja = lojaRef.id;
+
+    const lojaNova = {
+        chatID: '',
+        chavePix: '',
+        cidade: '',
+        id: idLoja,
+        idResp: id,
+        nome: nomeLoja,
+        taxas: '',
+    }
+
     const lojas = []
     lojas.push({ 
         nome: nomeLoja,
         cargo: 'ADM',
-        chavePix: '',
-        logoIMG: '',
-        instagram: '',
+        idLoja: idLoja
     })
 
     const dadosUsuario = {
@@ -58,14 +71,27 @@ function enviarDadosProBD(id, nome, nomeLoja, email) {
         id: id,
         cpf: '',
         lojas: lojas,
-        status: 'Pendente aprovação',
+        status: 'ativo',
         primeiroPagamento: '',
-        dataExpiracao: '',
+        dataExpiracao: dataDaqui7Dias(),
         usuariosAdicionais: '',
         faturamentoTotal: 0,
         chatID: '',
         planoID: 'sem plano'
     }
 
-    return firebase.firestore().collection('users').doc(id).set(dadosUsuario)
+    return Promise.all([
+        firebase.firestore().collection('users').doc(id).set(dadosUsuario),
+        firebase.firestore().collection('lojas').doc(idLoja).set(lojaNova)
+    ]);
+}
+
+function dataDaqui7Dias() {
+
+    const data = new Date();
+
+    data.setDate(data.getDate() + 7);
+
+    return firebase.firestore.Timestamp.fromDate(data);
+
 }

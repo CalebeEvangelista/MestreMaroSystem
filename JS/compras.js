@@ -394,4 +394,5 @@ async function mostrarCompras() {
   
 }
 
-gerarTabelaCompras()
+// gerarTabelaCompras() agora só roda quando a tela de Compras é aberta
+// pela primeira vez (ver carregarDadosDaTela em home.js).

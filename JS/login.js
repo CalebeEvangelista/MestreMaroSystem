@@ -44,6 +44,11 @@ async function login() {
         localStorage.setItem("senhaUser", senha.value);
         localStorage.setItem("user", dados.nome);
 
+        if (dados.status == 'funcionario'){
+            localStorage.setItem("status", dados.status);
+            localStorage.setItem("selecaoLoja", dados.idLoja);
+        }
+
         window.location.href = "/HTML/home.html";
 
     } catch (error) {
