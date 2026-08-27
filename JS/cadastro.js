@@ -4,22 +4,23 @@ function validarCadastro() {
     const email = document.getElementById('email').value
     const senha = document.getElementById('senha').value
     const repetirSenha = document.getElementById('repetirSenha').value
+    const tipo = 'normal'
 
     if (senha !== repetirSenha) {
         alert('Senhas diferentes, por favor corrija!')
         return
     }
 
-    cadastrarNovoUsuario(nome, nomeLoja, email, senha)
+    cadastrarNovoUsuario(nome, nomeLoja, email, senha, tipo)
 }
 
-function cadastrarNovoUsuario(nome, nomeLoja, email, senha) {
+function cadastrarNovoUsuario(nome, nomeLoja, email, senha, tipo) {
     firebase.auth().createUserWithEmailAndPassword(email, senha)
         .then(function(userCredential) {
             const user = userCredential.user
             const id = user.uid
 
-            return enviarDadosProBD(id, nome, nomeLoja, email)
+            return enviarDadosProBD(id, nome, nomeLoja, email, tipo)
         })
         .then(() => {
             alert('Usuário cadastrado com sucesso!')
@@ -42,7 +43,7 @@ function cadastrarNovoUsuario(nome, nomeLoja, email, senha) {
         });
 }
 
-function enviarDadosProBD(id, nome, nomeLoja, email) {
+function enviarDadosProBD(id, nome, nomeLoja, email, tipo) {
     const db = firebase.firestore()
 
     const lojaRef = db.collection('lojas').doc();
@@ -73,11 +74,22 @@ function enviarDadosProBD(id, nome, nomeLoja, email) {
         lojas: lojas,
         status: 'ativo',
         primeiroPagamento: '',
-        dataExpiracao: dataDaqui7Dias(),
+        dataExpiracao: '',
         usuariosAdicionais: '',
         faturamentoTotal: 0,
         chatID: '',
         planoID: 'sem plano'
+    }
+
+    if (tipo != 'normal') {
+        const data = new Date();
+        data.setMonth(data.getMonth() + 3);
+        const timeStamp = firebase.firestore.Timestamp.fromDate(data);
+
+        dadosUsuario.dataExpiracao = timeStamp;
+
+    } else {
+        dadosUsuario.dataExpiracao = dataDaqui7Dias();
     }
 
     return Promise.all([

@@ -46,7 +46,7 @@
             </div>
             <i class="fa-solid fa-arrow-right-from-bracket"></i>
         </div>
-        <div class="selecaoLoja" onclick="selecaoLoja()">
+        <div class="selecaoLoja" onclick="selecaoLoja()" id="botaoSelecaoLoja">
             <button>Loja</button>
         </div>
     </header>
@@ -66,7 +66,8 @@
                     <h1>HOJE</h1>
                     <hr>
                     <h4>
-                        Meta de hoje: <strong id="metaDia"></strong><i class="fa-solid fa-pen-to-square" onclick="alterarMeta('dia')"></i>
+                        Meta de hoje: <strong id="metaDia"></strong>
+                        <i class="fa-solid fa-pen-to-square" onclick="alterarMeta('dia')" id="alterarMetaDoDia"></i>
                     </h4>
                     <div class="metaProgress">
                         <div class="progress-bar" id="progressDia" style="width: 0%; transition: all 1s ease-in-out;">
@@ -88,7 +89,8 @@
                     <h1 id="mesDoAno">-</h1>
                     <hr>
                     <h4>
-                        Meta do mês: <strong id="metaMes"></strong><i class="fa-solid fa-pen-to-square" onclick="alterarMeta('mes')"></i>
+                        Meta do mês: <strong id="metaMes"></strong>
+                        <i class="fa-solid fa-pen-to-square" onclick="alterarMeta('mes')" id="alterarMetaDoMes"></i>
                     </h4>
                     <div class="metaProgress">
                         <div class="progress-bar" id="progressMes" style="width: 0%; transition: all 1s ease-in-out;">
@@ -488,7 +490,7 @@
                         <tr class="cabecalho">
                             <td>Código</td>
                             <td>Nome Produto</td>
-                            <td>Compra</td>
+                            <td id="cabecalhoCompra">Compra</td>
                             <td>Venda</td>
                             <td>Estoque</td>
                         </tr>
@@ -616,13 +618,12 @@
             <hr>
             <div class="conteudo">
                 <div class="esquerda">
-                    <img src="/IMAGENS/LOGO HORIZONTAL.png" class="logoLoja">
+                    <img src="/IMAGENS/logo mestre maro.png" class="logoLoja">
                     <h2 id="nomeLoja">-</h2>
                     <hr>
                     <div class="dadosLoja">
-                        <p>Endereço: Rua da república, 227A - Centenário | Campina Grande/PB</p>
-                        <p>Responsável: Calebe Evangelista</p>
-                        <p>CNPJ: 42.193.719/0001-36</p>
+                        <p>Endereço: -</p>
+                        <p>CNPJ: -</p>
                     </div>
                     <label class="funcionarios">
                         <p>Funcionários cadastrados:</p>

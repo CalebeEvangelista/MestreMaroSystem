@@ -235,6 +235,249 @@ td {
   display: block;
 }
 
+/* ==================== SWAL ==================== */
+
+/* ==================== SWAL — CADASTRO PROMOCIONAL ==================== */
+
+.swal-promocional-popup {
+    background: #161616 !important;
+    color: #fff !important;
+    border-radius: 20px !important;
+    width: min(720px, 92vw) !important;
+    padding: 0 !important;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+    font-family: "Bricolage Grotesque", sans-serif !important;
+}
+
+.swal-promocional-container {
+    padding: 30px 30px 26px;
+    max-height: 82vh;
+    overflow-y: auto;
+}
+
+.swal-promocional-container::-webkit-scrollbar {
+    width: 5px;
+}
+
+.swal-promocional-container::-webkit-scrollbar-thumb {
+    background: rgba(244,196,0,0.4);
+    border-radius: 10px;
+}
+
+/* ── Cabeçalho ── */
+.swal-promocional-header {
+    padding-bottom: 18px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.swal-promocional-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.swal-promocional-header h2 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.swal-promocional-status {
+    flex-shrink: 0;
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.swal-promocional-status.status-pendente {
+    background: rgba(255, 214, 0, 0.14);
+    color: #ffd600;
+    box-shadow: inset 0 0 0 1px rgba(255,214,0,0.3);
+}
+
+.swal-promocional-status.status-aprovado {
+    background: rgba(0, 255, 34, 0.12);
+    color: #4ade80;
+    box-shadow: inset 0 0 0 1px rgba(74,222,128,0.3);
+}
+
+.swal-promocional-status.status-recusado {
+    background: rgba(255, 0, 0, 0.12);
+    color: #f87171;
+    box-shadow: inset 0 0 0 1px rgba(248,113,113,0.3);
+}
+
+.swal-promocional-subtitle {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #999;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.swal-promocional-subtitle i {
+    color: #f4c400;
+    margin-right: 2px;
+}
+
+.swal-promocional-subtitle .dot {
+    color: #444;
+}
+
+/* ── Seções ── */
+.swal-promocional-section {
+    margin-bottom: 20px;
+}
+
+.swal-promocional-section:last-child {
+    margin-bottom: 0;
+}
+
+.swal-promocional-section-title {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.swal-promocional-section-title span {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    color: #facc15;
+    white-space: nowrap;
+}
+
+.swal-promocional-section-line {
+    flex: 1;
+    height: 1px;
+    margin-left: 12px;
+    background: linear-gradient(to right, rgba(250,204,21,0.4), rgba(255,255,255,0.03));
+}
+
+/* ── Grid de campos ── */
+.swal-promocional-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.swal-promocional-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 62px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    transition: 0.2s ease;
+}
+
+.swal-promocional-item:hover {
+    border-color: rgba(244,196,0,0.28);
+    background: rgba(255,255,255,0.05);
+}
+
+.swal-promocional-item.full {
+    grid-column: 1 / -1;
+}
+
+.swal-promocional-item.destaque {
+    background: rgba(244,196,0,0.08);
+    border-color: rgba(244,196,0,0.25);
+}
+
+.swal-promocional-item.destaque strong {
+    color: #facc15;
+    font-size: 1.05rem;
+}
+
+.swal-promocional-item small {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    color: #888;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.swal-promocional-item small i {
+    color: #f4c400;
+    font-size: 0.75rem;
+}
+
+.swal-promocional-item strong {
+    display: block;
+    color: #fff;
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+/* ── Desafio (texto livre) ── */
+.swal-promocional-desafio {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-left: 3px solid #f4c400;
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: #ddd;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    white-space: pre-line;
+}
+
+/* ── Botão de fechar ── */
+.swal-promocional-popup .swal2-close {
+    color: #cfcfcf !important;
+    font-size: 28px !important;
+    transition: 0.2s ease;
+}
+
+.swal-promocional-popup .swal2-close:hover {
+    color: #f4c400 !important;
+}
+
+@media (max-width: 650px) {
+    .swal-promocional-popup {
+        width: 94vw !important;
+    }
+
+    .swal-promocional-container {
+        padding: 22px 18px;
+    }
+
+    .swal-promocional-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .swal-promocional-item.full {
+        grid-column: auto;
+    }
+
+    .swal-promocional-header-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
 /* ==================== RESPONSIVIDADE ==================== */
 
 /* notebooks menores */

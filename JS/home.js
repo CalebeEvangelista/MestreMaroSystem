@@ -305,6 +305,8 @@ async function atualizarEstoque(produtos, loja) {
                 const mesmoNome = produto.nome?.trim().toLowerCase() === dado.nome?.trim().toLowerCase();
 
                 if (mesmoId || mesmoNome) {
+                    if (dado.estoque === 'none') return;
+
                     const qtdVendida = produto.quantidade ?? 0;
                     const estoqueAtual = dado.estoque ?? 0;
                     const novoEstoque = estoqueAtual - qtdVendida;
@@ -2479,12 +2481,7 @@ async function funcionarioBlock() {
     return false;
 }
 
-async function removerItensPorCargo() {
-    
-}
-
 verificarIdLoja()
-removerItensPorCargo()
 ultimasVendas()
 calcularMetas()
 estoqueBaixo()

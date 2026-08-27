@@ -61,9 +61,10 @@ async function completeInfos() {
   snapshot.forEach(usuario => {
     const user = usuario.data()
 
-    if (user.status == 'Pendente aprovação') return
+    if (user.status == 'Pendente aprovação' || user.status == 'funcionario') return
 
-    ativos += 1
+    if (user.status == 'ativo'){ativos += 1}
+    if (user.status == 'bloqueado'){inadiplentes += 1}
 
    const lojasArray = user.lojas
     ? (Array.isArray(user.lojas) ? user.lojas : Object.values(user.lojas))
@@ -141,11 +142,21 @@ async function completeInfos() {
     btnEdit.addEventListener('click', () => editarUsuario(usuario.id))
     botoesTd.appendChild(btnEdit)
 
-    const btnAtivar = document.createElement('button')
-    btnAtivar.textContent = 'Ativar'
-    btnAtivar.classList.add('btn', 'ativar')
-    btnAtivar.addEventListener('click', () => ativarUsuario(usuario.id))
-    botoesTd.appendChild(btnAtivar)
+    if (user.status == 'ativo') {
+      const btnExcluir = document.createElement('button')
+      btnExcluir.textContent = 'Excluir'
+      btnExcluir.classList.add('btn', 'ativar')
+      btnExcluir.style.backgroundColor = 'red'
+      btnExcluir.addEventListener('click', () => deletarUsuario(usuario.id))
+      botoesTd.appendChild(btnExcluir)
+    } else {
+      const btnAtivar = document.createElement('button')
+      btnAtivar.textContent = 'Ativar'
+      btnAtivar.classList.add('btn', 'ativar')
+      btnAtivar.style.backgroundColor = 'green'
+      btnAtivar.addEventListener('click', () => ativarUsuario(usuario.id))
+      botoesTd.appendChild(btnAtivar)
+    }
 
     tr.appendChild(botoesTd)
     tabela.appendChild(tr)
@@ -156,6 +167,60 @@ async function completeInfos() {
   usersInadiplentes.textContent = inadiplentes
   faturamentoEl.textContent = 'R$ ' + Number(faturamentoTotal).toFixed(2).replace('.',',')
 }
+
+// Função para deletar usuario
+async function deletarUsuario(id) {
+  const db = firebase.firestore();
+
+  const resultado = await Swal.fire({
+
+      title: 'Tem certeza?',
+
+      text: 'Esse cadastro será excluído permanentemente.',
+
+      icon: 'warning',
+
+      showCancelButton: true,
+
+      confirmButtonText: 'Sim, excluir',
+
+      cancelButtonText: 'Cancelar'
+
+  });
+
+
+  if (!resultado.isConfirmed) return;
+
+
+  try {
+
+      await db.collection('users').doc(id).delete();
+
+      alert('Usuario deletado!')
+
+      window.location.reload();
+
+
+  } catch (erro) {
+
+      console.error(
+          'Erro ao excluir:',
+          erro
+      );
+
+      Swal.fire({
+
+          icon: 'error',
+
+          title: 'Erro ao excluir',
+
+          text: 'Não foi possível excluir esse cadastro.'
+
+      });
+
+  }
+
+};
 
 // Função que abre o Swal e busca o usuário pelo ID
 async function editarUsuario(userId) {
@@ -328,89 +393,338 @@ async function ativarUsuario(userId) {
 }
 
 async function carregarTabelaPromocional() {
-  const tbody = document.getElementById('tabelaPromocional');
-  const db = firebase.firestore();
 
-  tbody.innerHTML = '';
+    const tbody = document.getElementById('tabelaPromocional');
+    const db = firebase.firestore();
 
-  try {
-    const snapshot = await db.collection('promocional').orderBy('criadoEm').get();
+    tbody.innerHTML = '';
 
-    if (snapshot.empty) {
-      tbody.innerHTML = `<tr><td colspan="6">Nenhum cadastro encontrado.</td></tr>`;
-      return;
+    try {
+
+        const snapshot = await db
+            .collection('promocional')
+            .orderBy('criadoEm')
+            .get();
+
+        if (snapshot.empty) {
+
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6">Nenhum cadastro encontrado.</td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        snapshot.forEach(doc => {
+
+            const d = doc.data();
+
+            if (d.faturamento == '') return;
+
+
+            // =========================
+            // CRIA A LINHA
+            // =========================
+
+            const tr = document.createElement('tr');
+
+            tr.innerHTML = `
+                <td>${d.nome || '-'}</td>
+
+                <td>
+                    ${d.cidade || '-'} / ${d.estado || '-'}
+                </td>
+
+                <td>
+                    ${d.loja || '-'}
+                </td>
+
+                <td>
+                    ${d.segmento || '-'}
+                </td>
+
+                <td>
+                    ${d.faturamento || '-'}
+                </td>
+
+                <td>
+
+                    <button class="btn visualizar">
+                        Visualizar
+                    </button>
+
+                    <button class="btn aprovar">
+                        Aprovar
+                    </button>
+
+                    <button class="btn edit recusar">
+                        Recusar
+                    </button>
+
+                    <button class="btn exc excluir">
+                        Excluir
+                    </button>
+
+                </td>
+            `;
+
+
+            // =========================
+            // VISUALIZAR CADASTRO
+            // =========================
+
+            tr.querySelector('.visualizar').onclick = async () => {
+
+              let criadoEm = '-';
+
+              if (d.criadoEm) {
+                  criadoEm = d.criadoEm.toDate
+                      ? d.criadoEm.toDate().toLocaleString('pt-BR')
+                      : d.criadoEm;
+              }
+
+              const statusMap = {
+                  aprovado: { label: 'Aprovado', classe: 'aprovado' },
+                  recusado: { label: 'Recusado', classe: 'recusado' }
+              };
+              const statusInfo = statusMap[d.status] || { label: 'Pendente', classe: 'pendente' };
+
+              await Swal.fire({
+                  customClass: { popup: 'swal-promocional-popup' },
+                  title: '',
+                  showCloseButton: true,
+                  showConfirmButton: false,
+                  html: `
+                      <div class="swal-promocional-container">
+
+                          <div class="swal-promocional-header">
+                              <div class="swal-promocional-header-top">
+                                  <h2>${d.nome || '-'}</h2>
+                                  <span class="swal-promocional-status status-${statusInfo.classe}">${statusInfo.label}</span>
+                              </div>
+                              <p class="swal-promocional-subtitle">
+                                  <i class="fa-solid fa-store"></i> ${d.loja || '-'}
+                                  <span class="dot">•</span>
+                                  <i class="fa-regular fa-calendar"></i> ${criadoEm}
+                                  <span class="dot">•</span>
+                                  <i class="fa-solid fa-circle-nodes"></i> ${d.origem || '-'}
+                              </p>
+                          </div>
+
+                          <div class="swal-promocional-section">
+                              <div class="swal-promocional-section-title">
+                                  <span>Contato</span>
+                                  <div class="swal-promocional-section-line"></div>
+                              </div>
+                              <div class="swal-promocional-grid">
+                                  <div class="swal-promocional-item">
+                                      <small><i class="fa-solid fa-envelope"></i> E-mail</small>
+                                      <strong>${d.email || '-'}</strong>
+                                  </div>
+                                  <div class="swal-promocional-item">
+                                      <small><i class="fa-solid fa-phone"></i> Telefone</small>
+                                      <strong>${d.telefone || '-'}</strong>
+                                  </div>
+                                  <div class="swal-promocional-item full">
+                                      <small><i class="fa-solid fa-location-dot"></i> Endereço</small>
+                                      <strong>${d.endereco || '-'} — ${d.cidade || '-'}/${d.estado || '-'}</strong>
+                                  </div>
+                              </div>
+                          </div>
+
+                          <div class="swal-promocional-section">
+                              <div class="swal-promocional-section-title">
+                                  <span>Operação</span>
+                                  <div class="swal-promocional-section-line"></div>
+                              </div>
+                              <div class="swal-promocional-grid">
+                                  <div class="swal-promocional-item">
+                                      <small><i class="fa-solid fa-tags"></i> Segmento</small>
+                                      <strong>${d.segmento || '-'}</strong>
+                                  </div>
+                                  <div class="swal-promocional-item">
+                                      <small><i class="fa-solid fa-shop"></i> Tamanho da operação</small>
+                                      <strong>${d.operacao || '-'}</strong>
+                                  </div>
+                                  <div class="swal-promocional-item">
+                                      <small><i class="fa-solid fa-users"></i> Funcionários</small>
+                                      <strong>${d.funcionarios || '-'}</strong>
+                                  </div>
+                                  <div class="swal-promocional-item">
+                                      <small><i class="fa-solid fa-cash-register"></i> Vendas/dia</small>
+                                      <strong>${d.vendas || '-'}</strong>
+                                  </div>
+                                  <div class="swal-promocional-item">
+                                      <small><i class="fa-solid fa-laptop"></i> Sistema atual</small>
+                                      <strong>${d.sistema || '-'}</strong>
+                                  </div>
+                                  <div class="swal-promocional-item destaque">
+                                      <small><i class="fa-solid fa-sack-dollar"></i> Faturamento médio</small>
+                                      <strong>${d.faturamento || '-'}</strong>
+                                  </div>
+                              </div>
+                          </div>
+
+                          <div class="swal-promocional-section">
+                              <div class="swal-promocional-section-title">
+                                  <span>Principal desafio</span>
+                                  <div class="swal-promocional-section-line"></div>
+                              </div>
+                              <p class="swal-promocional-desafio">${d.desafio || 'Não informado.'}</p>
+                          </div>
+
+                      </div>
+                  `
+              });
+            };
+
+
+            // =========================
+            // APROVAR
+            // =========================
+
+            tr.querySelector('.aprovar').onclick = async () => {
+
+                await db
+                    .collection('promocional')
+                    .doc(doc.id)
+                    .update({
+                        status: 'aprovado'
+                    });
+
+
+                const snapshot = await db
+                    .collection('promocional')
+                    .doc(doc.id)
+                    .get();
+
+
+                const dados = snapshot.data();
+
+
+                cadastrarNovoUsuario(
+                    dados.nome,
+                    dados.loja,
+                    dados.email,
+                    'maro123',
+                    dados.origem
+                );
+
+            };
+
+
+            // =========================
+            // RECUSAR
+            // =========================
+
+            tr.querySelector('.recusar').onclick = async () => {
+
+                await db
+                    .collection('promocional')
+                    .doc(doc.id)
+                    .update({
+                        status: 'recusado'
+                    });
+
+            };
+
+
+            // =========================
+            // EXCLUIR
+            // =========================
+
+            tr.querySelector('.excluir').onclick = async () => {
+
+                const telaAtual =
+                    document.querySelector('.screen.active')?.id
+                    || 'dashboard';
+
+
+                const resultado = await Swal.fire({
+
+                    title: 'Tem certeza?',
+
+                    text: 'Esse cadastro será excluído permanentemente.',
+
+                    icon: 'warning',
+
+                    showCancelButton: true,
+
+                    confirmButtonText: 'Sim, excluir',
+
+                    cancelButtonText: 'Cancelar'
+
+                });
+
+
+                if (!resultado.isConfirmed) return;
+
+
+                try {
+
+                    await db
+                        .collection('promocional')
+                        .doc(doc.id)
+                        .delete();
+
+
+                    localStorage.setItem(
+                        'telaAdminAtual',
+                        telaAtual
+                    );
+
+
+                    window.location.reload();
+
+
+                } catch (erro) {
+
+                    console.error(
+                        'Erro ao excluir:',
+                        erro
+                    );
+
+
+                    Swal.fire({
+
+                        icon: 'error',
+
+                        title: 'Erro ao excluir',
+
+                        text: 'Não foi possível excluir esse cadastro.'
+
+                    });
+
+                }
+
+            };
+
+
+            tbody.appendChild(tr);
+
+        });
+
+
+    } catch (erro) {
+
+        console.error(
+            'Erro ao carregar promocionais:',
+            erro
+        );
+
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    Erro ao carregar dados.
+                </td>
+            </tr>
+        `;
+
     }
 
-    snapshot.forEach(doc => {
-      const d = doc.data();
-
-      console.log(d)
-
-      if (d.faturamento == '') return
-
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${d.nome || '-'}</td>
-        <td>${d.cidade || '-'} / ${d.estado || '-'}</td>
-        <td>${d.loja || '-'}</td>
-        <td>${d.segmento || '-'}</td>
-        <td>${d.faturamento || '-'}</td>
-        <td>
-          <button class="btn aprovar">Aprovar</button>
-          <button class="btn edit recusar">Recusar</button>
-          <button class="btn exc excluir">Excluir</button>
-        </td>
-      `;
-
-      tr.querySelector('.aprovar').onclick = async () => {
-        await db.collection('promocional').doc(doc.id).update({
-          status: 'aprovado'
-        });
-      };
-
-      tr.querySelector('.recusar').onclick = async () => {
-        await db.collection('promocional').doc(doc.id).update({
-          status: 'recusado'
-        });
-      };
-
-      tr.querySelector('.excluir').onclick = async () => {
-        const telaAtual = document.querySelector('.screen.active')?.id || 'dashboard';
-
-        const resultado = await Swal.fire({
-          title: 'Tem certeza?',
-          text: 'Esse cadastro será excluído permanentemente.',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'Sim, excluir',
-          cancelButtonText: 'Cancelar'
-        });
-
-        if (!resultado.isConfirmed) return;
-
-        try {
-          await db.collection('promocional').doc(doc.id).delete();
-
-          localStorage.setItem('telaAdminAtual', telaAtual);
-          window.location.reload();
-        } catch (erro) {
-          console.error('Erro ao excluir:', erro);
-
-          Swal.fire({
-            icon: 'error',
-            title: 'Erro ao excluir',
-            text: 'Não foi possível excluir esse cadastro.'
-          });
-        }
-      };
-
-      tbody.appendChild(tr);
-    });
-
-  } catch (erro) {
-    console.error('Erro ao carregar promocionais:', erro);
-    tbody.innerHTML = `<tr><td colspan="6">Erro ao carregar dados.</td></tr>`;
-  }
 }
 
 window.addEventListener('DOMContentLoaded', () => {

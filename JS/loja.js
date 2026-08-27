@@ -138,6 +138,7 @@ async function mostrarDados() {
     const taxaIfood = document.getElementById('taxaIfood')
     const chavePixSpace = document.getElementById('chavePixSpace')
     const nomeLoja = document.getElementById('nomeLoja')
+    const respLoja = document.getElementById('respLoja')
 
     const idLoja = localStorage.getItem('selecaoLoja')
 
@@ -153,6 +154,7 @@ async function mostrarDados() {
     chavePixSpace.textContent = 'Chave Pix: ' + loja.chavePix
 
     nomeLoja.textContent = loja.nome
+    respLoja.textContent = loja.nome
 }
 
 function escapeHtml(value = '') {

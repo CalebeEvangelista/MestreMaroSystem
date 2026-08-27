@@ -1,3 +1,13 @@
+async function travaDeAcesso() {
+    const ehAtendente = await verificarCargo();
+
+    if (ehAtendente) {
+        alert("Você não pode acessar essa página!");
+        window.history.back();
+        return;
+    }
+}
+
 async function saudeMensal() {
     const idLoja = localStorage.getItem('selecaoLoja')
     const db = firebase.firestore()

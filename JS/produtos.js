@@ -16,6 +16,8 @@ async function completeProducts() {
     const listaCompra = []
     const listaVenda = []
 
+    const ehAtendente = await verificarCargo(); //FUNÇÃO PRESENTE NO AUTHGUARD
+
     snapshot.docs.forEach(doc => {
         const produto = {
             docId: doc.id,
@@ -39,9 +41,19 @@ async function completeProducts() {
         nome.innerHTML = produto.nome || ''
         tr.appendChild(nome)
 
-        const compra = document.createElement('td')
-        compra.textContent = 'R$ ' + Number(produto.valorCompra || 0).toFixed(2).replace('.', ',')
-        tr.appendChild(compra)
+        if (!ehAtendente) {
+
+            const compra = document.createElement('td');
+
+            compra.textContent =
+                'R$ ' +
+                Number(produto.valorCompra || 0)
+                    .toFixed(2)
+                    .replace('.', ',');
+
+            tr.appendChild(compra);
+        }
+
 
         const venda = document.createElement('td')
         venda.textContent = 'R$ ' + Number(produto.valorVenda || 0).toFixed(2).replace('.', ',')

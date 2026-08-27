@@ -33,3 +33,34 @@ firebase.auth().onAuthStateChanged(async user => {
         console.error('Erro ao buscar usuário:', error)
     }
 })
+
+async function employesBlock() {
+    const db = firebase.firestore()
+    const id = localStorage.getItem('userId')
+
+    const snapshot = await db.collection('users').doc(id).get()
+    const dados = snapshot.data()
+
+    if (dados.cargo == 'Atendente'){
+        document.getElementById('alterarMetaDoDia').style.display = 'none';
+        document.getElementById('alterarMetaDoMes').style.display = 'none';
+        document.getElementById('botaoSelecaoLoja').style.display = 'none';
+        document.getElementById('cabecalhoCompra').style.display = 'none';
+        document.getElementById('financeiro').style.display = 'none';
+        document.getElementById('lojas').style.display = 'none';
+    }
+
+}
+
+async function verificarCargo() {
+    const db = firebase.firestore()
+    const id = localStorage.getItem('userId')
+
+    const snapshot = await db.collection('users').doc(id).get()
+    const dados = snapshot.data()
+    if (dados.cargo == 'Atendente'){
+        return true
+    }
+}
+
+employesBlock()

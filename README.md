@@ -92,3 +92,10 @@
 - Resolvido problema critico na criação dos novos usuarios, onde criava o usuario e a loja mas não colocava ID na loja, sendo assim tornando ela inutilizavel
 - Arrumado um probleminha na pagina de ADM
 - Arrumado um mini-bug na hora de excluir uma venda, que tava conflitando com uma proteção para os funcionários não excluirem vendas
+
+## V0.5.4
+- Adicionado travas de acesso aos funcionarios Atendentes
+- Por momento retiramos algumas informações da aba LOJA para poder ser usada por todo mundo
+- Ajustado alguns pontos do cadastro da campanha de 3 meses
+- Ajustado alguns itens da tela de ADM
+- Iniciado a implementação fo Functions para maior segurança do código
