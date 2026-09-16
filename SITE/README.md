@@ -105,3 +105,9 @@
 - Adicionado tela de COMANDAS, onde voce pode criar comandas a partir do nome de uma pessoa para ir registrando o que ele for consumindo e no final cobrar tudo de uma vez
 - Adicionado de vez a função de composição, agora alem de adicionar produtos pai, ele faz todo o calculo de quantidades e abate do estoque geral
 - Corrigido alguns bugs nos item que não precisava rastrear estoque
+
+## V0.5.6
+- Colocado função de mostrar o custo dos produtos dentro da composição pra uma melhor vizualização e calculo de custo de produtos compostos
+- Colocado função de criar grupos de produtos com direito a resumo na aba produtos
+- Adicionado pagina de Delivery 
+- Adicionado todas as funções do delivery seguindo o fluxo: Cliente acessa -> escolhe os itens -> preenche os dados -> Escolhe o meio de pagamento -> Finaliza o pedido -> Aparece o popUp na tela do PDV -> Você aceita o pedido e imprime -> Você altera os status -> E ao finalizar a venda sobe sozinha e aparece nas ultimas vendas

@@ -40,7 +40,7 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 }
 .brand { display: flex; align-items: center; }
 .brand-logo { height: 38px; width: auto; object-fit: contain; }
-.header-title { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.header-title { display: flex; flex-direction: column; align-items: center; gap: 2px;}
 .header-title h1 { font-size: 1.05rem; font-weight: 700; }
 .header-tag {
   font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
@@ -54,6 +54,14 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   transition: 0.2s;
 }
 .cart-toggle:hover { border-color: var(--yellow); color: var(--yellow); }
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.track-toggle {
+  display: flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--black-card); border: 1px solid var(--border); color: var(--white);
+  transition: 0.2s;
+}
+.track-toggle:hover { border-color: var(--yellow); color: var(--yellow); }
 .cart-badge {
   position: absolute; top: 6px; right: 6px;
   width: 18px; height: 18px; border-radius: 50%;
@@ -324,6 +332,77 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
 }
 .btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(244,196,0,0.3); }
 
+/* ===== FORMULÁRIO DE DADOS DO CLIENTE ===== */
+.customer-form { display: flex; flex-direction: column; gap: 14px; }
+.customer-field { display: flex; flex-direction: column; gap: 6px; }
+.customer-field label {
+  font-size: 0.78rem; font-weight: 700; color: var(--gray);
+}
+.customer-input {
+  width: 100%; height: 44px; padding: 0 14px;
+  background: var(--black-soft); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--white); font-family: var(--font); font-size: 0.9rem; outline: none; transition: 0.2s;
+}
+.customer-input::placeholder { color: var(--gray-soft); }
+.customer-input:focus { border-color: rgba(244,196,0,0.4); box-shadow: 0 0 0 3px rgba(244,196,0,0.07); }
+.customer-textarea { height: auto; padding: 10px 14px; resize: vertical; min-height: 60px; font-family: var(--font); }
+.customer-error {
+  display: none; font-size: 0.72rem; font-weight: 600; color: #ff6b6b; margin-top: -2px;
+}
+.customer-field.invalid .customer-input { border-color: #ff5555; box-shadow: 0 0 0 3px rgba(255,85,85,0.1); }
+.customer-field.invalid .customer-error { display: block; }
+
+/* ===== RESUMO DO CLIENTE NO MODAL DE CONFIRMAÇÃO ===== */
+.modal-customer-summary {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 14px;
+  background: var(--black-soft); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 0.8rem; color: var(--gray);
+}
+.modal-customer-summary strong { color: var(--white); }
+.modal-customer-summary .summary-obs { color: var(--gray-soft); font-style: italic; margin-top: 2px; }
+
+/* ===== MODAL DE FORMA DE PAGAMENTO ===== */
+.payment-method-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.payment-method-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 16px 8px;
+  background: var(--black-soft); border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--gray); font-family: var(--font); font-size: 0.8rem; font-weight: 700;
+  transition: 0.18s;
+}
+.payment-method-btn:hover { border-color: rgba(244,196,0,0.3); color: var(--white); }
+.payment-method-btn.active {
+  border-color: var(--yellow); background: var(--yellow-soft); color: var(--yellow);
+  box-shadow: 0 0 0 3px rgba(244,196,0,0.08);
+}
+
+.payment-troco-section { display: flex; flex-direction: column; gap: 10px; }
+.payment-troco-section label { font-size: 0.78rem; font-weight: 700; color: var(--gray); }
+.troco-quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.troco-quick-btn {
+  height: 40px; border-radius: var(--radius-sm);
+  background: var(--black-soft); border: 1.5px solid var(--border); color: var(--gray);
+  font-family: var(--font); font-size: 0.76rem; font-weight: 700; transition: 0.18s;
+}
+.troco-quick-btn:hover { border-color: rgba(244,196,0,0.3); color: var(--white); }
+.troco-quick-btn.active {
+  border-color: var(--yellow); background: var(--yellow-soft); color: var(--yellow);
+}
+
+.payment-summary { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; background: var(--black-soft); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.payment-summary-row { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--gray); }
+.payment-summary-row.total { padding-top: 8px; margin-top: 4px; border-top: 1px solid var(--border); font-size: 0.95rem; font-weight: 800; color: var(--white); }
+.payment-method-btn small { font-weight: 600; opacity: 0.7; font-size: 0.62rem; }
+
+/* ===== SEÇÃO DE PIX / CARTÃO NA ENTREGA (dentro do modal de pagamento) ===== */
+.payment-pix-section, .payment-card-section { display: flex; flex-direction: column; gap: 10px; }
+.payment-pix-section label { font-size: 0.78rem; font-weight: 700; color: var(--gray); }
+.payment-pix-note {
+  font-size: 0.78rem; color: var(--gray-soft); text-align: center;
+  padding: 10px; background: var(--yellow-soft); border: 1px solid rgba(244,196,0,0.18); border-radius: var(--radius-sm);
+}
+
 /* ===== TOAST ===== */
 .toast {
   position: fixed; bottom: 24px; left: 50%;
@@ -354,7 +433,91 @@ button { font-family: var(--font); cursor: pointer; border: none; background: no
   .header { padding: 0 14px; }
   .filters-bar { flex-direction: column; align-items: stretch; }
   .search-wrap { max-width: 100%; }
+  .group-filters { justify-content: center; }
+  .header-tag { text-align: center; }
   .products-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .skeleton-card { height: 260px; }
+  .product-actions { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-direction: column;}
+  .btn-add { font-size: 1.2rem; width: 150px;} 
+  .header-title { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 150px;}
 }
 @media (max-width: 380px) { .products-grid { grid-template-columns: 1fr; } }
+
+/* ===== SWEETALERT2 — mesmo padrão visual dos modais do cardápio ===== */
+.swal-pedido-popup {
+  background: var(--black-card) !important;
+  color: var(--white) !important;
+  border: 1px solid rgba(244,196,0,0.22) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.7) !important;
+  padding: 32px 28px !important;
+  font-family: var(--font) !important;
+}
+.swal-pedido-icone-sucesso {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--yellow-soft); border: 1px solid rgba(244,196,0,0.3); color: var(--yellow);
+  display: flex; align-items: center; justify-content: center; margin: 0 auto 8px;
+}
+.swal-pedido-icone-sucesso svg { width: 28px; height: 28px; }
+.swal-pedido-titulo {
+  font-family: var(--font) !important;
+  font-size: 1.25rem !important; font-weight: 800 !important;
+  color: var(--white) !important;
+}
+.swal-pedido-texto {
+  font-family: var(--font) !important;
+  color: var(--gray) !important; font-size: 0.9rem !important;
+}
+.swal-pedido-btn-confirm {
+  background: var(--yellow) !important; color: var(--black) !important;
+  font-family: var(--font) !important; font-weight: 800 !important; font-size: 0.9rem !important;
+  border-radius: 12px !important; height: 46px !important; padding: 0 32px !important;
+  box-shadow: 0 8px 24px var(--yellow-glow) !important;
+}
+.swal-pedido-btn-erro {
+  background: var(--black-soft) !important; color: var(--gray) !important;
+  font-family: var(--font) !important; font-weight: 700 !important; font-size: 0.9rem !important;
+  border-radius: 12px !important; height: 46px !important; padding: 0 32px !important;
+  border: 1px solid var(--border) !important;
+}
+.swal-pedido-btn-secundario {
+  background: transparent !important; color: var(--gray-soft) !important;
+  font-family: var(--font) !important; font-weight: 700 !important; font-size: 0.9rem !important;
+  border-radius: 12px !important; height: 46px !important; padding: 0 24px !important;
+  border: none !important;
+}
+
+
+/* ===== ACOMPANHAR PEDIDO ===== */
+#trackResultados { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; max-height: 50vh; overflow-y: auto; }
+.track-pedido-card {
+  padding: 14px; background: var(--black-soft); border: 1px solid var(--border); border-radius: var(--radius-sm);
+}
+.track-pedido-header {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.8rem; color: var(--gray); margin-bottom: 14px;
+  font-weight: 700;
+}
+.track-pedido-header span:last-child { color: var(--yellow); }
+.track-steps { display: flex; }
+.track-step {
+  flex: 1; position: relative; text-align: center;
+  font-size: 0.6rem; color: var(--gray-soft); font-weight: 600;
+}
+.track-step-line {
+  position: absolute; top: 7px; left: -50%; width: 100%; height: 2px;
+  background: var(--border); z-index: 0;
+}
+.track-step:first-child .track-step-line { display: none; }
+.track-step-dot {
+  position: relative; z-index: 1;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--black-card); border: 2px solid var(--border);
+  margin: 0 auto 6px;
+}
+.track-step.done, .track-step.active { color: var(--white); }
+.track-step.done .track-step-dot, .track-step.active .track-step-dot {
+  background: var(--yellow); border-color: var(--yellow);
+}
+.track-step.active .track-step-dot { box-shadow: 0 0 0 4px var(--yellow-soft); }
+.track-step.done .track-step-line, .track-step.active .track-step-line { background: var(--yellow); }

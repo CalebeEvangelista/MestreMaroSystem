@@ -24,7 +24,136 @@ function normalizarComposicaoParaLista(composicao) {
     return []
 }
 
-function criarLinhaComposicao(container, valores = {}) {
+// ─────────────────────────────────────────────
+// GRUPOS — configurável por loja (lojas/{id}.grupos), gerenciado em loja.js
+// (gerenciarGruposLoja). Cai no padrão de fábrica se a loja ainda não configurou.
+// ─────────────────────────────────────────────
+const GRUPOS_PADRAO_FABRICA = ['COPAO', 'DESTILADOS', 'DIVERSOS', 'DOCES', 'PIPOCAS', 'TABACARIA', 'SEM ALCOOL', 'OUTROS']
+
+// Cache em memória — evita ir no Firestore de novo a cada modal aberto na mesma sessão.
+let _gruposLoja = null
+
+function ordenarGrupos(grupos) {
+    return [...grupos].sort((a, b) => a.localeCompare(b, 'pt-BR'))
+}
+
+async function carregarGruposLoja() {
+    if (_gruposLoja) return _gruposLoja
+
+    let idLoja = localStorage.getItem('selecaoLoja')
+    try {
+        const parsed = JSON.parse(idLoja)
+        idLoja = parsed.id || parsed
+    } catch {}
+    idLoja = String(idLoja || '').trim()
+
+    try {
+        const db = firebase.firestore()
+        const snapshot = await db.collection('lojas').where('id', '==', idLoja).get()
+
+        if (!snapshot.empty) {
+            const lojaDados = snapshot.docs[0].data()
+            if (Array.isArray(lojaDados.grupos) && lojaDados.grupos.length) {
+                _gruposLoja = ordenarGrupos(lojaDados.grupos)
+                return _gruposLoja
+            }
+        }
+    } catch (error) {
+        console.error('Erro ao carregar categorias da loja:', error)
+    }
+
+    _gruposLoja = ordenarGrupos(GRUPOS_PADRAO_FABRICA)
+    return _gruposLoja
+}
+
+function normalizarTextoGrupo(texto) {
+    return String(texto || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // remove acento
+        .replace(/[-_]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toUpperCase()
+}
+
+// Reconhece variações (acento, singular/plural, espaço duplicado) e mapeia pro grupo
+// mais próximo dentro da lista da loja — ex: "Destilado" e "DESTILADOS " caem os dois
+// em 'DESTILADOS', se essa for uma categoria cadastrada. Não achou nada → 'OUTROS'
+// (ou o último item da lista, se a loja não tiver um grupo chamado 'OUTROS').
+function mapearParaGrupoPadrao(grupoOriginal, grupos) {
+    const listaGrupos = grupos || _gruposLoja || GRUPOS_PADRAO_FABRICA
+    const normalizado = normalizarTextoGrupo(grupoOriginal)
+    const fallback = listaGrupos.includes('OUTROS') ? 'OUTROS' : listaGrupos[listaGrupos.length - 1]
+
+    if (!normalizado) return fallback
+    if (listaGrupos.includes(normalizado)) return normalizado
+
+    const semS = normalizado.endsWith('S') ? normalizado.slice(0, -1) : normalizado
+    const comS = normalizado.endsWith('S') ? normalizado : normalizado + 'S'
+    const candidato = listaGrupos.find(g => g === semS || g === comS)
+
+    return candidato || fallback
+}
+
+function gerarOpcoesGrupo(valorSelecionado, grupos) {
+    const listaGrupos = ordenarGrupos(grupos || _gruposLoja || GRUPOS_PADRAO_FABRICA)
+    const temValor = valorSelecionado !== null && valorSelecionado !== undefined && String(valorSelecionado).trim() !== ''
+    const selecionado = temValor ? mapearParaGrupoPadrao(valorSelecionado, listaGrupos) : ''
+
+    const opcaoPlaceholder = `<option value="" ${selecionado ? '' : 'selected'} disabled hidden>Selecionar</option>`
+
+    const opcoes = listaGrupos
+        .map(g => `<option value="${g}" ${g === selecionado ? 'selected' : ''}>${g}</option>`)
+        .join('')
+
+    return opcaoPlaceholder + opcoes
+}
+
+// ─────────────────────────────────────────────
+// CUSTO PELA COMPOSIÇÃO — mesmo raciocínio da cascata de estoque,
+// só que aplicado no valorCompra em vez do estoque.
+// ─────────────────────────────────────────────
+// Cache leve dos produtos da loja atual (nome, valorCompra, composicao), preenchido
+// junto com o datalist em garantirDatalistProdutoPai(), pra calcular custo sem
+// precisar de uma consulta ao Firestore a cada tecla digitada.
+let _cacheProdutosComposicao = []
+
+// Desce a composição recursivamente até achar um produto sem composição própria
+// (custo "de verdade", digitado à mão) e soma tudo multiplicado pelas frações.
+function calcularCustoRecursivo(nomeProduto, visitados = new Set()) {
+    const nome = String(nomeProduto || '').toUpperCase().trim()
+    if (!nome) return 0
+    if (visitados.has(nome)) return 0 // composição circular, evita loop infinito
+    visitados.add(nome)
+
+    const produto = _cacheProdutosComposicao.find(p => p.nome === nome)
+    if (!produto) return 0
+
+    const componentes = normalizarComposicaoParaLista(produto.composicao)
+    if (!componentes.length) {
+        return Number(produto.valorCompra) || 0
+    }
+
+    return componentes.reduce((total, componente) => {
+        const fracao = Number(componente.qtdComposicao) || 0
+        return total + fracao * calcularCustoRecursivo(componente.itemPai, new Set(visitados))
+    }, 0)
+}
+
+// Soma só as linhas marcadas com "Somar no custo" — as desmarcadas ficam de referência.
+function calcularCustoTotalComposicao(container) {
+    return Array.from(container.querySelectorAll('.linha-composicao')).reduce((soma, linha) => {
+        const checkbox = linha.querySelector('.campo-componente-somar-custo')
+        if (!checkbox || !checkbox.checked) return soma
+
+        const nomePai = linha.querySelector('.campo-componente-pai').value
+        const qtd = parseFloat(String(linha.querySelector('.campo-componente-qtd').value || '0').replace(',', '.')) || 0
+
+        return soma + qtd * calcularCustoRecursivo(nomePai)
+    }, 0)
+}
+
+function criarLinhaComposicao(container, valores = {}, aoAtualizar) {
     const linha = document.createElement('div')
     linha.className = 'swal-add-produto-grid swal-add-produto-grid-2 linha-composicao'
 
@@ -47,12 +176,51 @@ function criarLinhaComposicao(container, valores = {}) {
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
+            <div class="composicao-custo-linha">
+                <span class="composicao-custo-valor">Custo: R$ 0,00</span>
+                <label class="composicao-custo-check">
+                    <input type="checkbox" class="campo-componente-somar-custo">
+                    Somar no custo
+                </label>
+            </div>
         </div>
     `
 
-    linha.querySelector('.composicao-remover-btn').onclick = () => linha.remove()
+    const inputPai = linha.querySelector('.campo-componente-pai')
+    const inputQtd = linha.querySelector('.campo-componente-qtd')
+    const spanCusto = linha.querySelector('.composicao-custo-valor')
+    const checkboxSomar = linha.querySelector('.campo-componente-somar-custo')
+
+    function recalcularLinha() {
+        const qtd = parseFloat(String(inputQtd.value || '0').replace(',', '.')) || 0
+        const custo = qtd * calcularCustoRecursivo(inputPai.value)
+        spanCusto.textContent = 'Custo: R$ ' + custo.toFixed(2).replace('.', ',')
+
+        if (typeof aoAtualizar === 'function') aoAtualizar()
+    }
+
+    inputPai.addEventListener('input', recalcularLinha)
+    inputQtd.addEventListener('input', recalcularLinha)
+    checkboxSomar.addEventListener('change', () => {
+        if (typeof aoAtualizar === 'function') aoAtualizar()
+    })
+
+    linha.querySelector('.composicao-remover-btn').onclick = () => {
+        linha.remove()
+        if (typeof aoAtualizar === 'function') aoAtualizar()
+    }
 
     container.appendChild(linha)
+    recalcularLinha()
+}
+
+// Força recalcular o custo de todas as linhas já criadas — usado quando o cache
+// de produtos termina de carregar depois que as linhas já foram montadas na tela.
+function recalcularTodasLinhasComposicao(container) {
+    if (!container) return
+    container.querySelectorAll('.campo-componente-pai').forEach(input => {
+        input.dispatchEvent(new Event('input'))
+    })
 }
 
 function coletarComposicao(container) {
@@ -71,7 +239,7 @@ function coletarComposicao(container) {
 
 // Popula o datalist compartilhado com os nomes dos produtos da loja atual.
 // Não depende mais de um input fixo — cada linha de componente aponta pra esse mesmo datalist.
-function garantirDatalistProdutoPai(excluirDocId) {
+function garantirDatalistProdutoPai(excluirDocId, aoCarregar) {
     let idLoja = localStorage.getItem('selecaoLoja')
     try {
         const parsed = JSON.parse(idLoja)
@@ -94,14 +262,26 @@ function garantirDatalistProdutoPai(excluirDocId) {
         .get()
         .then(snapshot => {
             dataList.innerHTML = ''
+            _cacheProdutosComposicao = []
+
             snapshot.forEach(doc => {
+                const produtoDaLista = doc.data()
+
+                // Cache pro cálculo de custo — inclui todo mundo, mesmo o excluído do dropdown
+                _cacheProdutosComposicao.push({
+                    nome: String(produtoDaLista.nome || '').toUpperCase().trim(),
+                    valorCompra: produtoDaLista.valorCompra,
+                    composicao: produtoDaLista.composicao
+                })
+
                 if (excluirDocId && doc.id === excluirDocId) return
 
-                const produtoDaLista = doc.data()
                 const opt = document.createElement('option')
                 opt.value = produtoDaLista.nome
                 dataList.appendChild(opt)
             })
+
+            if (typeof aoCarregar === 'function') aoCarregar()
         })
         .catch(error => console.error('Erro ao carregar produtos pai:', error))
 }
@@ -119,6 +299,8 @@ async function completeProducts() {
     idLojaSelecao = String(idLojaSelecao || '').trim()
 
     const snapshot = await db.collection("produtos").orderBy("nome").get();
+
+    const gruposLoja = await carregarGruposLoja()
 
     const listaNomes = []
     const listaCompra = []
@@ -140,6 +322,7 @@ async function completeProducts() {
 
         const tabela = document.getElementById('tabelaProdutos')
         const tr = document.createElement('tr')
+        tr.dataset.grupo = mapearParaGrupoPadrao(produto.grupo, gruposLoja)
 
         const codigo = document.createElement('td')
         codigo.innerHTML = produto.id || ''
@@ -197,6 +380,200 @@ async function completeProducts() {
 
         tabela.appendChild(tr)
     });
+
+    renderizarResumoGrupos()
+    aplicarFiltroGrupo()
+}
+
+// ─────────────────────────────────────────────
+// RESUMO DE GRUPOS — botões estilo pill em cima da tabela de produtos,
+// com contador por grupo, filtro ao clicar e "+" pra cadastrar categoria nova
+// direto ali (sem precisar ir no cadastro da loja).
+// ─────────────────────────────────────────────
+let filtroGrupoAtivo = 'TODAS'
+
+async function renderizarResumoGrupos() {
+    const container = document.getElementById('resumoGruposProdutos')
+    if (!container) return
+
+    const gruposLoja = await carregarGruposLoja()
+    const linhas = document.querySelectorAll('#tabelaProdutos tr')
+
+    const contagem = {}
+    gruposLoja.forEach(g => { contagem[g] = 0 })
+
+    linhas.forEach(tr => {
+        const grupo = tr.dataset.grupo || 'OUTROS'
+        contagem[grupo] = (contagem[grupo] || 0) + 1
+    })
+
+    container.innerHTML = `
+        <button type="button" class="filtroComanda ${filtroGrupoAtivo === 'TODAS' ? 'ativo' : ''}" data-grupo="TODAS">
+            Todas <span class="grupo-filtro-contagem">${linhas.length}</span>
+        </button>
+        ${gruposLoja.map(grupo => `
+            <div class="grupo-filtro-item">
+                <button type="button" class="filtroComanda ${filtroGrupoAtivo === grupo ? 'ativo' : ''}" data-grupo="${grupo}">
+                    ${grupo} <span class="grupo-filtro-contagem">${contagem[grupo] || 0}</span>
+                </button>
+                ${grupo !== 'OUTROS' ? `
+                    <button type="button" class="grupo-filtro-excluir" data-grupo-excluir="${grupo}" title="Excluir categoria">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                ` : ''}
+            </div>
+        `).join('')}
+        <button type="button" id="botaoAdicionarGrupoResumo" class="grupo-filtro-add-btn" title="Adicionar categoria">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+    `
+
+    container.querySelectorAll('.filtroComanda').forEach(botao => {
+        botao.onclick = () => {
+            filtroGrupoAtivo = botao.dataset.grupo
+            aplicarFiltroGrupo()
+            renderizarResumoGrupos() // só pra atualizar qual botão fica destacado
+        }
+    })
+
+    container.querySelectorAll('.grupo-filtro-excluir').forEach(botao => {
+        botao.onclick = evento => {
+            evento.stopPropagation()
+            excluirGrupoLoja(botao.dataset.grupoExcluir)
+        }
+    })
+
+    const botaoAdicionar = container.querySelector('#botaoAdicionarGrupoResumo')
+    if (botaoAdicionar) botaoAdicionar.onclick = abrirCadastroRapidoGrupo
+}
+
+// Remove a categoria de lojas/{id}.grupos, depois de confirmar. Não apaga nem
+// mexe nos produtos que estavam nela — eles simplesmente passam a cair em
+// 'OUTROS' na próxima vez que a tabela for montada (mesma lógica de sempre).
+async function excluirGrupoLoja(nomeGrupo) {
+    if (nomeGrupo === 'OUTROS') {
+        Swal.fire({
+            icon: 'info',
+            title: 'Não dá pra excluir',
+            text: 'OUTROS é a categoria padrão pra produto sem grupo definido.',
+            heightAuto: false
+        })
+        return
+    }
+
+    const confirmacao = await Swal.fire({
+        title: 'Excluir categoria?',
+        html: `A categoria <b>${nomeGrupo}</b> será removida da lista. Produtos que estavam nela passam a aparecer em <b>OUTROS</b>.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Excluir',
+        cancelButtonText: 'Cancelar',
+        heightAuto: false,
+        customClass: { popup: 'swal-caixa-popup' }
+    })
+
+    if (!confirmacao.isConfirmed) return
+
+    let idLoja = localStorage.getItem('selecaoLoja')
+    try {
+        const parsed = JSON.parse(idLoja)
+        idLoja = parsed.id || parsed
+    } catch {}
+    idLoja = String(idLoja || '').trim()
+
+    const db = firebase.firestore()
+
+    try {
+        const snapshot = await db.collection('lojas').where('id', '==', idLoja).get()
+
+        if (snapshot.empty) {
+            Swal.fire({ icon: 'error', title: 'Loja não encontrada', heightAuto: false })
+            return
+        }
+
+        const gruposAtuais = await carregarGruposLoja()
+        const gruposAtualizados = gruposAtuais.filter(g => g !== nomeGrupo)
+
+        await db.collection('lojas').doc(snapshot.docs[0].id).set({ grupos: gruposAtualizados }, { merge: true })
+
+        _gruposLoja = gruposAtualizados
+        if (filtroGrupoAtivo === nomeGrupo) filtroGrupoAtivo = 'TODAS'
+
+        completeProducts()
+    } catch (error) {
+        Swal.fire({ icon: 'error', title: 'Erro ao excluir categoria', text: error.message, heightAuto: false })
+    }
+}
+
+// Esconde/mostra as linhas da tabela de acordo com o filtro ativo — a contagem
+// de cada linha já foi decidida na hora de montar a tabela (tr.dataset.grupo).
+function aplicarFiltroGrupo() {
+    document.querySelectorAll('#tabelaProdutos tr').forEach(tr => {
+        const mostra = filtroGrupoAtivo === 'TODAS' || tr.dataset.grupo === filtroGrupoAtivo
+        tr.style.display = mostra ? '' : 'none'
+    })
+}
+
+// Cadastra uma categoria nova direto do resumo — grava no mesmo lugar que
+// gerenciarGruposLoja() (loja.js): lojas/{id}.grupos. Assim que salva, já
+// atualiza o cache local e re-renderiza, sem precisar recarregar a página.
+async function abrirCadastroRapidoGrupo() {
+    const { value: nomeDigitado } = await Swal.fire({
+        title: 'Nova categoria',
+        input: 'text',
+        inputPlaceholder: 'Ex: CERVEJAS',
+        showCancelButton: true,
+        confirmButtonText: 'Adicionar',
+        cancelButtonText: 'Cancelar',
+        heightAuto: false,
+        customClass: { popup: 'swal-caixa-popup' },
+        inputValidator: valor => {
+            if (!valor || !valor.trim()) return 'Digite um nome pra categoria'
+        }
+    })
+
+    if (!nomeDigitado) return
+
+    const novoGrupo = normalizarTextoGrupo(nomeDigitado)
+
+    let idLoja = localStorage.getItem('selecaoLoja')
+    try {
+        const parsed = JSON.parse(idLoja)
+        idLoja = parsed.id || parsed
+    } catch {}
+    idLoja = String(idLoja || '').trim()
+
+    const db = firebase.firestore()
+
+    try {
+        const snapshot = await db.collection('lojas').where('id', '==', idLoja).get()
+
+        if (snapshot.empty) {
+            Swal.fire({ icon: 'error', title: 'Loja não encontrada', heightAuto: false })
+            return
+        }
+
+        const gruposAtuais = await carregarGruposLoja()
+
+        if (gruposAtuais.includes(novoGrupo)) {
+            Swal.fire({ icon: 'info', title: 'Essa categoria já existe', heightAuto: false })
+            return
+        }
+
+        const gruposAtualizados = [...gruposAtuais, novoGrupo]
+
+        await db.collection('lojas').doc(snapshot.docs[0].id).set({ grupos: gruposAtualizados }, { merge: true })
+
+        _gruposLoja = gruposAtualizados // atualiza o cache na hora
+
+        Swal.fire({ icon: 'success', title: 'Categoria adicionada', timer: 1000, showConfirmButton: false, heightAuto: false })
+
+        // Reconstrói a tabela com a lista de grupos atualizada — produto que já tinha
+        // esse nome escrito passa a bater e sair de 'Outros' pra essa categoria nova
+        completeProducts()
+    } catch (error) {
+        Swal.fire({ icon: 'error', title: 'Erro ao adicionar categoria', text: error.message, heightAuto: false })
+    }
 }
 
 function abrirEditorDeProduto(docId) {
@@ -250,6 +627,8 @@ async function editarProduto(docIdProduto) {
         })
         return
     }
+
+    const gruposLoja = await carregarGruposLoja()
 
     const escapeHtml = (valor) => {
         if (valor === null || valor === undefined) return ''
@@ -325,8 +704,9 @@ async function editarProduto(docIdProduto) {
 
                         <div class="swal-edit-produto-field">
                             <label for="Editgrupo">Grupo</label>
-                            <input id="Editgrupo" class="swal-edit-produto-input" type="text"
-                                value="${escapeHtml(dadosProduto.grupo ?? '')}">
+                            <select id="Editgrupo" class="swal-edit-produto-input">
+                                ${gerarOpcoesGrupo(dadosProduto.grupo, gruposLoja)}
+                            </select>
                         </div>
 
                         <div class="swal-edit-produto-field">
@@ -351,6 +731,13 @@ async function editarProduto(docIdProduto) {
                     <button type="button" id="EditbotaoAddComponente" class="composicao-add-btn">
                         <i class="fa-solid fa-plus"></i> Adicionar componente
                     </button>
+
+                    <div class="composicao-custo-resumo">
+                        <span>Custo somado da composição: <strong id="EditcomposicaoCustoTotal">R$ 0,00</strong></span>
+                        <button type="button" id="EditbotaoAplicarCustoComposicao" class="composicao-add-btn">
+                            <i class="fa-solid fa-arrow-right"></i> Usar no campo Compra
+                        </button>
+                    </div>
                 </div>
 
                 <div class="swal-edit-produto-section">
@@ -408,17 +795,36 @@ async function editarProduto(docIdProduto) {
 
             const composicaoContainer = popup.querySelector('#EditcomposicaoContainer')
             const botaoAddComponente = popup.querySelector('#EditbotaoAddComponente')
+            const composicaoCustoTotalEl = popup.querySelector('#EditcomposicaoCustoTotal')
+            const botaoAplicarCustoComposicao = popup.querySelector('#EditbotaoAplicarCustoComposicao')
 
-            garantirDatalistProdutoPai(docIdProduto)
+            function atualizarResumoCustoComposicao() {
+                const total = calcularCustoTotalComposicao(composicaoContainer)
+                composicaoCustoTotalEl.textContent = 'R$ ' + total.toFixed(2).replace('.', ',')
+            }
+
+            garantirDatalistProdutoPai(docIdProduto, () => {
+                recalcularTodasLinhasComposicao(composicaoContainer)
+                atualizarResumoCustoComposicao()
+            })
 
             const componentesExistentes = normalizarComposicaoParaLista(dadosProduto.composicao)
             if (componentesExistentes.length) {
-                componentesExistentes.forEach(componente => criarLinhaComposicao(composicaoContainer, componente))
+                componentesExistentes.forEach(componente =>
+                    criarLinhaComposicao(composicaoContainer, componente, atualizarResumoCustoComposicao)
+                )
             } else {
-                criarLinhaComposicao(composicaoContainer)
+                criarLinhaComposicao(composicaoContainer, {}, atualizarResumoCustoComposicao)
             }
 
-            botaoAddComponente.onclick = () => criarLinhaComposicao(composicaoContainer)
+            botaoAddComponente.onclick = () =>
+                criarLinhaComposicao(composicaoContainer, {}, atualizarResumoCustoComposicao)
+
+            botaoAplicarCustoComposicao.onclick = () => {
+                const total = calcularCustoTotalComposicao(composicaoContainer)
+                valorCompraProd.value = total.toFixed(2)
+                valorCompraProd.dispatchEvent(new Event('input'))
+            }
 
             const botaoCancelar = popup.querySelector('#swalEditProdutoCancelar')
             const botaoSalvar = popup.querySelector('#swalEditProdutoSalvar')
@@ -442,6 +848,11 @@ async function editarProduto(docIdProduto) {
             botaoSalvar.onclick = async () => {
                 if (!nomeProduto.value.trim()) {
                     Swal.showValidationMessage('Informe o nome do produto')
+                    return
+                }
+
+                if (!grupo.value) {
+                    Swal.showValidationMessage('Selecione um grupo')
                     return
                 }
 
@@ -484,7 +895,9 @@ async function editarProduto(docIdProduto) {
     })
 }
 
-function abrirSwalAdicionarProduto() {
+async function abrirSwalAdicionarProduto() {
+    const gruposLoja = await carregarGruposLoja()
+
     const resultado = Swal.fire({
         width: '920px',
         showConfirmButton: false,
@@ -569,12 +982,9 @@ function abrirSwalAdicionarProduto() {
 
                         <div class="swal-add-produto-field">
                             <label for="grupo">Grupo</label>
-                            <input
-                                id="grupo"
-                                class="swal-add-produto-input"
-                                type="text"
-                                placeholder="Grupo do produto"
-                            >
+                            <select id="grupo" class="swal-add-produto-input">
+                                ${gerarOpcoesGrupo('', gruposLoja)}
+                            </select>
                         </div>
 
                         <div class="swal-add-produto-field">
@@ -600,6 +1010,13 @@ function abrirSwalAdicionarProduto() {
                     <button type="button" id="botaoAddComponente" class="composicao-add-btn">
                         <i class="fa-solid fa-plus"></i> Adicionar componente
                     </button>
+
+                    <div class="composicao-custo-resumo">
+                        <span>Custo somado da composição: <strong id="composicaoCustoTotal">R$ 0,00</strong></span>
+                        <button type="button" id="botaoAplicarCustoComposicao" class="composicao-add-btn">
+                            <i class="fa-solid fa-arrow-right"></i> Usar no campo Compra
+                        </button>
+                    </div>
                 </div>
 
                 <div class="swal-add-produto-section">
@@ -681,10 +1098,28 @@ function abrirSwalAdicionarProduto() {
 
             const composicaoContainer = popup.querySelector('#composicaoContainer')
             const botaoAddComponente = popup.querySelector('#botaoAddComponente')
+            const composicaoCustoTotalEl = popup.querySelector('#composicaoCustoTotal')
+            const botaoAplicarCustoComposicao = popup.querySelector('#botaoAplicarCustoComposicao')
 
-            garantirDatalistProdutoPai()
-            criarLinhaComposicao(composicaoContainer)
-            botaoAddComponente.onclick = () => criarLinhaComposicao(composicaoContainer)
+            function atualizarResumoCustoComposicao() {
+                const total = calcularCustoTotalComposicao(composicaoContainer)
+                composicaoCustoTotalEl.textContent = 'R$ ' + total.toFixed(2).replace('.', ',')
+            }
+
+            garantirDatalistProdutoPai(undefined, () => {
+                recalcularTodasLinhasComposicao(composicaoContainer)
+                atualizarResumoCustoComposicao()
+            })
+
+            criarLinhaComposicao(composicaoContainer, {}, atualizarResumoCustoComposicao)
+            botaoAddComponente.onclick = () =>
+                criarLinhaComposicao(composicaoContainer, {}, atualizarResumoCustoComposicao)
+
+            botaoAplicarCustoComposicao.onclick = () => {
+                const total = calcularCustoTotalComposicao(composicaoContainer)
+                valorCompraProd.value = total.toFixed(2)
+                valorCompraProd.dispatchEvent(new Event('input'))
+            }
 
             function normalizarNumero(valor) {
                 if (valor === null || valor === undefined || valor === '') return 0
@@ -714,6 +1149,11 @@ function abrirSwalAdicionarProduto() {
             botaoSalvar.addEventListener('click', () => {
                 if (!nomeProduto.value.trim()) {
                     Swal.showValidationMessage('Informe o nome do produto')
+                    return
+                }
+
+                if (!grupo.value) {
+                    Swal.showValidationMessage('Selecione um grupo')
                     return
                 }
 

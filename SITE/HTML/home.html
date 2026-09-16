@@ -10,7 +10,7 @@
     
 </head>
 <body>
-    <header>   
+    <header>
         <img src="/IMAGENS/logo mestre maro.png">
         <div class="itemCategoria" id="visao" onclick="openScreen('visao')">
             <i class="fa-solid fa-eye"></i>
@@ -23,6 +23,10 @@
         <div class="itemCategoria" id="comandas" onclick="openScreen('comandas')">
             <i class="fa-solid fa-file-invoice-dollar"></i>
             <p>Comandas</p>
+        </div>
+        <div class="itemCategoria" id="pedidosDelivery" onclick="openScreen('pedidosDelivery')">
+            <i class="fa-solid fa-motorcycle"></i>
+            <p>Delivery</p>
         </div>
         <div class="itemCategoria" id="compras" onclick="openScreen('compras')">
             <i class="fa-solid fa-cart-arrow-down"></i>
@@ -64,7 +68,6 @@
         </section>
 
         <section class="visao">
-            <h1>VISÃO GERAL</h1>
             <section id="visaoCima">
                 <div class="balancoDia">
                     <h1>HOJE</h1>
@@ -222,6 +225,50 @@
             <div class="comandasVazio" id="comandasVazio" style="display:none;">
                 <i class="fa-solid fa-receipt"></i>
                 <p>Nenhuma comanda encontrada</p>
+            </div>
+        </section>
+
+        <section class="pedidosDelivery">
+            <div class="kanban-topo">
+                <button id="btnLinkCardapio" class="kanban-topo-btn" onclick="mostrarLinkCardapio()">
+                    <i class="fa-solid fa-link"></i> Link do Cardápio
+                </button>
+                <button id="btnPedidosPendentes" class="kanban-topo-btn kanban-topo-btn-alerta" onclick="abrirListaPedidosPendentes()">
+                    <i class="fa-solid fa-bell"></i> Pedidos Pendentes
+                    <span class="kanban-pendentes-badge" id="countPendentes" style="display:none;">0</span>
+                </button>
+            </div>
+
+            <div class="kanban-board">
+                <div class="kanban-coluna" data-status="CONFIRMADO">
+                    <div class="kanban-coluna-header">
+                        <span class="kanban-coluna-dot dot-confirmado"></span>
+                        <span class="kanban-coluna-titulo">Confirmado</span>
+                        <span class="kanban-coluna-count" id="count-CONFIRMADO">0</span>
+                    </div>
+                    <div class="kanban-coluna-cards" id="coluna-CONFIRMADO" data-status="CONFIRMADO"></div>
+                </div>
+
+                <div class="kanban-coluna" data-status="SAIU_ENTREGA">
+                    <div class="kanban-coluna-header">
+                        <span class="kanban-coluna-dot dot-saiu"></span>
+                        <span class="kanban-coluna-titulo">Saiu p/ Entrega</span>
+                        <span class="kanban-coluna-count" id="count-SAIU_ENTREGA">0</span>
+                    </div>
+                    <div class="kanban-coluna-cards" id="coluna-SAIU_ENTREGA" data-status="SAIU_ENTREGA"></div>
+                </div>
+
+                <div class="kanban-coluna" data-status="FINALIZADO">
+                    <div class="kanban-coluna-header">
+                        <span class="kanban-coluna-dot dot-finalizado"></span>
+                        <span class="kanban-coluna-titulo">Finalizado</span>
+                        <span class="kanban-coluna-count" id="count-FINALIZADO">0</span>
+                        <button class="kanban-limpar-btn" id="btnLimparFinalizados" onclick="limparPedidosFinalizados()" title="Limpar pedidos finalizados da tela">
+                            <i class="fa-solid fa-broom"></i>
+                        </button>
+                    </div>
+                    <div class="kanban-coluna-cards" id="coluna-FINALIZADO" data-status="FINALIZADO"></div>
+                </div>
             </div>
         </section>
 
@@ -505,9 +552,8 @@
         <section class="produtos">
             <i id="conferirProds" onclick="conferenciaSimples()" class="fa-solid fa-clipboard-check"></i>
             <i id="addProds" onclick="abrirSwalAdicionarProduto()" class="fa-solid fa-circle-plus"></i>
-        
-            
-            <h1>Lista de Produtos</h1>
+
+            <div id="resumoGruposProdutos" class="comandasFiltros"></div>
 
             <div class="tableContainer">
                 <table>
@@ -672,6 +718,10 @@
                             <button id="editarTaxas">Editar taxas</button>
                         </label>
                         <label>
+                            <p>Categorias de produto:</p>
+                            <button onclick="gerenciarGruposLoja()">Editar categorias</button>
+                        </label>
+                        <label>
                             <p>Dados financeiros:</p>
                             <p id="chavePixSpace">Chave Pix: -</p>
                             <button onclick="editarPix()">Editar chave</button>
@@ -702,5 +752,6 @@
 <script src="/JS/loja.js"></script>
 <script src="/JS/clientes.js"></script>
 <script src="/JS/comandas.js"></script>
+<script src="/JS/pedidos-delivery.js"></script>
 <script src="/JS/home.js"></script>
 </html>

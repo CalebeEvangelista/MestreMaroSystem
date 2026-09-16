@@ -24,6 +24,7 @@ async function consultarNomeLoja(id) {
 
 async function alterarMeta(tipoMeta){
     Swal.fire({
+      heightAuto: false,
       title: "Digite nova meta:",
       input: "number",
       inputPlaceholder: "R$ Meta",
@@ -117,6 +118,13 @@ function carregarDadosDaTela(screenClass) {
             // Definidas em loja.js
             if (typeof mostrarDados === 'function') mostrarDados()
             if (typeof alterarTaxasPagamentos === 'function') alterarTaxasPagamentos()
+            break
+
+        case 'pedidosDelivery':
+            // Definida em pedidos-delivery.js — inicia o listener em
+            // tempo real do Kanban (só precisa rodar uma vez, por isso
+            // faz sentido estar aqui no lazy load)
+            if (typeof iniciarKanbanDelivery === 'function') iniciarKanbanDelivery()
             break
     }
 }
@@ -883,12 +891,13 @@ async function adicionarLoja() {
                     localStorage.setItem('lojas', JSON.stringify(lojasAtuais))
 
                     Swal.close()
-                    Swal.fire({ icon: 'success', title: 'Sucesso', text: 'Loja adicionada com sucesso!' })
+                    Swal.fire({ heightAuto: false, icon: 'success', title: 'Sucesso', text: 'Loja adicionada com sucesso!' })
                     window.location.reload()
 
                 } catch (error) {
                     console.error('❌ Erro:', error)
                     Swal.fire({
+                        heightAuto: false,
                         icon: 'error',
                         title: 'Erro ao salvar',
                         text: error.message
@@ -905,6 +914,7 @@ async function excluirLoja(idLoja, nomeLoja, cargo) {
     }
 
     const { value: senha } = await Swal.fire({
+        heightAuto: false,
         title: 'Excluir loja',
         html: `
             <p>Você está prestes a excluir <strong>${nomeLoja}</strong>.</p>
@@ -966,6 +976,7 @@ async function excluirLoja(idLoja, nomeLoja, cargo) {
         localStorage.setItem('lojas', JSON.stringify(lojasAtualizadas))
 
         Swal.fire({
+            heightAuto: false,
             icon: 'success',
             title: 'Loja excluída',
             text: `${nomeLoja} foi removida com sucesso!`
@@ -975,9 +986,11 @@ async function excluirLoja(idLoja, nomeLoja, cargo) {
 
     } catch (error) {
         if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            Swal.fire({ icon: 'error', title: 'Senha incorreta', text: 'Confirme sua senha e tente novamente.' })
+            Swal.fire({
+ heightAuto: false, icon: 'error', title: 'Senha incorreta', text: 'Confirme sua senha e tente novamente.' })
         } else {
-            Swal.fire({ icon: 'error', title: 'Erro ao excluir', text: error.message })
+            Swal.fire({
+ heightAuto: false, icon: 'error', title: 'Erro ao excluir', text: error.message })
         }
     }
 }
@@ -2386,6 +2399,389 @@ async function funcionarioBlock() {
     return false;
 }
 
+// =====================================================
+//  PEDIDOS DO DELIVERY — popup de "Novo Pedido" + impressão
+// =====================================================
+//  Escuta em tempo real a coleção "pedidosDelivery", filtrando pela
+//  loja atual + status "ENVIADO" (pedidos que vieram do cardápio
+//  online e ainda não foram confirmados pela loja).
+//  Quando um pedido novo chega, mostra um popup no MESMO padrão
+//  visual "swal-resumo" já usado no Resumo do Caixa (pdv.js) — com
+//  um botão "Confirmar Pedido", que vira o status inicial (CONFIRMADO,
+//  com confirmadoEm gravado — isso alimenta o timer que vai entrar no
+//  Kanban depois) e já dispara a impressão do cupom.
+//  Reaproveita formatarReais(), iconeParaTipo() e normalizar(),
+//  já definidas em pdv.js.
+// =====================================================
+
+// (Nada aqui — o cupom agora abre numa janela nova, no mesmo padrão
+// do imprimirConteudoPedido80mm() que já existe no pdv.js, ao invés
+// de usar uma div escondida + @media print na própria página.)
+
+// guarda os pedidos com popup na tela/na fila, pra o botão "Confirmar
+// Pedido" conseguir recuperar os dados completos sem precisar colocar
+// um objeto inteiro dentro de um atributo onclick="..."
+const _pedidosDeliveryPendentes = new Map();
+
+// fila de popups — só um Swal por vez; os próximos esperam o atual fechar
+let _filaPopupsPedidos = [];
+let _popupPedidoAberto = false;
+
+function aguardarLojaEIniciarImpressaoDelivery() {
+    const idLoja = localStorage.getItem("selecaoLoja");
+
+    if (idLoja && idLoja.trim() !== "") {
+        iniciarListenerPedidosDelivery(idLoja.trim());
+    } else {
+        setTimeout(aguardarLojaEIniciarImpressaoDelivery, 1000);
+    }
+}
+
+function iniciarListenerPedidosDelivery(idLoja) {
+    const db = firebase.firestore();
+
+    db.collection("pedidosDelivery")
+        .where("idLoja", "==", idLoja)
+        .where("status", "==", "ENVIADO")
+        .onSnapshot(
+            (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added") {
+                        enfileirarPopupPedido(change.doc.id, { id: change.doc.id, ...change.doc.data() });
+                    } else if (change.type === "removed") {
+                        // saiu do status ENVIADO (foi confirmado, ou não existe mais)
+                        _pedidosDeliveryPendentes.delete(change.doc.id);
+                    }
+                });
+                atualizarBadgePendentes();
+            },
+            (erro) => console.error("[Mestre Maro] Erro no listener de pedidos do delivery:", erro)
+        );
+}
+
+/** Mostra/atualiza o número no botão "Pedidos Pendentes" */
+function atualizarBadgePendentes() {
+    const badge = document.getElementById("countPendentes");
+    if (!badge) return; // a tela Delivery pode nem ter sido aberta ainda
+
+    const qtd = _pedidosDeliveryPendentes.size;
+    badge.textContent = qtd;
+    badge.style.display = qtd > 0 ? "flex" : "none";
+}
+
+/** Reabre o popup de confirmação a partir da lista de pendentes, mantendo a fila consistente */
+function abrirPopupDaListaDePendentes(idDoc) {
+    Swal.close(); // fecha a lista
+
+    const pedido = _pedidosDeliveryPendentes.get(idDoc);
+    if (!pedido) return;
+
+    _popupPedidoAberto = true;
+    mostrarPopupNovoPedidoDelivery(idDoc, pedido);
+}
+
+/**
+ * Botão "Pedidos Pendentes" — mostra todos os pedidos com status
+ * ENVIADO que ainda não foram confirmados, mesmo que o popup tenha
+ * sido fechado sem querer ou a pessoa tenha saído da tela. Clicar
+ * num deles reabre o mesmo popup de confirmação de sempre.
+ */
+function abrirListaPedidosPendentes() {
+    if (_pedidosDeliveryPendentes.size === 0) {
+        Swal.fire({
+            heightAuto: false,
+            icon: "info",
+            title: "Nenhum pedido pendente",
+            text: "Todos os pedidos já foram confirmados.",
+        });
+        return;
+    }
+
+    const linhas = [..._pedidosDeliveryPendentes.entries()].map(([idDoc, pedido]) => {
+        const cliente = pedido.clienteDetalhes || {};
+        return `
+            <div class="swal-resumo-pagamento-row" style="cursor:pointer" onclick="abrirPopupDaListaDePendentes('${idDoc}')">
+                <div class="swal-resumo-pagamento-left">
+                    <div class="swal-resumo-pagamento-icon" style="background:rgba(250,204,21,0.15); color:#facc15;">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                    <div>
+                        <div class="swal-resumo-pagamento-tipo">${pedido.cliente || "Sem nome"}</div>
+                        <div class="swal-resumo-pagamento-qtd">${cliente.telefone || "-"} — ${pedido.hora || ""}</div>
+                    </div>
+                </div>
+                <div class="swal-resumo-pagamento-valor">${formatarReais(pedido.totalVenda || 0)}</div>
+            </div>
+        `;
+    }).join("");
+
+    Swal.fire({
+        heightAuto: false,
+        customClass: { popup: "swal-resumo-popup" },
+        showConfirmButton: false,
+        html: `
+            <div class="swal-resumo-wrap">
+                <div class="swal-resumo-header">
+                    <h2>🔔 Pedidos Pendentes</h2>
+                    <p class="swal-resumo-subtitle">Clique num pedido pra ver e confirmar</p>
+                </div>
+                <div class="swal-resumo-section">
+                    ${linhas}
+                </div>
+            </div>
+            <div class="swal-resumo-footer">
+                <button class="swal-resumo-btn swal-resumo-btn-close" onclick="Swal.close()">
+                    <i class="fa-solid fa-xmark"></i> Fechar
+                </button>
+            </div>
+        `,
+    });
+}
+
+/**
+ * Botão "Link do Cardápio" — monta o link pronto pra mandar pro
+ * cliente e já deixa copiar com um clique.
+ */
+function mostrarLinkCardapio() {
+    const idLoja = localStorage.getItem("selecaoLoja");
+    if (!idLoja) return;
+
+    const link = `${window.location.origin}/delivery.html?loja=${idLoja.trim()}`;
+
+    Swal.fire({
+        heightAuto: false,
+        customClass: { popup: 'swal-caixa-popup' },
+        icon: "info",
+        title: "Link do Cardápio",
+        html: `
+            <p style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:10px;">
+                Copie e envie esse link pros seus clientes fazerem pedidos:
+            </p>
+            <input id="linkCardapioInput" type="text" value="${link}" readonly
+                style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;font-size:13px;box-sizing:border-box;">
+        `,
+        confirmButtonText: "Copiar Link",
+        showCancelButton: true,
+        cancelButtonText: "Fechar",
+    }).then((resultado) => {
+        if (resultado.isConfirmed) {
+            navigator.clipboard.writeText(link).then(() => {
+                Swal.fire({ heightAuto: false, icon: "success", title: "Copiado!", timer: 1500, showConfirmButton: false });
+            });
+        }
+    });
+}
+
+/** Adiciona um pedido na fila de popups. Se já tem popup aberto, só avisa com um toast. */
+function enfileirarPopupPedido(idDoc, pedido) {
+    _pedidosDeliveryPendentes.set(idDoc, pedido);
+    _filaPopupsPedidos.push(idDoc);
+
+    if (_popupPedidoAberto) {
+        Swal.fire({
+            heightAuto: false,
+            toast: true,
+            position: "top-end",
+            icon: "info",
+            title: `+${_filaPopupsPedidos.length} pedido(s) na fila`,
+            showConfirmButton: false,
+            timer: 2200,
+            timerProgressBar: true,
+        });
+        return;
+    }
+
+    processarProximoPopupDaFila();
+}
+
+/** Mostra o próximo popup da fila, se tiver algum esperando */
+function processarProximoPopupDaFila() {
+    if (_filaPopupsPedidos.length === 0) {
+        _popupPedidoAberto = false;
+        return;
+    }
+
+    _popupPedidoAberto = true;
+    const idDoc = _filaPopupsPedidos.shift();
+    const pedido = _pedidosDeliveryPendentes.get(idDoc);
+    if (pedido) mostrarPopupNovoPedidoDelivery(idDoc, pedido);
+    else processarProximoPopupDaFila(); // não deveria acontecer, mas por segurança
+}
+
+// ─────────────────────────────────────────────────────
+//  POPUP "NOVO PEDIDO" — padrão visual swal-resumo
+// ─────────────────────────────────────────────────────
+function mostrarPopupNovoPedidoDelivery(idDoc, venda) {
+    _pedidosDeliveryPendentes.set(idDoc, venda);
+
+    const cliente = venda.clienteDetalhes || {};
+    const mp      = venda.meiosPagamento?.[0] || {};
+
+    const linhasProdutos = venda.produtos.map((p) => {
+        const eEntrega = p.id === "taxa-entrega";
+        const icon = eEntrega ? "fa-motorcycle" : "fa-basket-shopping";
+        const bg   = eEntrega ? "rgba(250,204,21,0.15)" : "rgba(255,255,255,0.08)";
+        const cor  = eEntrega ? "#facc15" : "#fff";
+        return `
+            <div class="swal-resumo-pagamento-row">
+                <div class="swal-resumo-pagamento-left">
+                    <div class="swal-resumo-pagamento-icon" style="background:${bg}; color:${cor}">
+                        <i class="fa-solid ${icon}"></i>
+                    </div>
+                    <div>
+                        <div class="swal-resumo-pagamento-tipo">${p.nome}</div>
+                        <div class="swal-resumo-pagamento-qtd">${p.quantidade}x</div>
+                    </div>
+                </div>
+                <div class="swal-resumo-pagamento-valor">${formatarReais(p.valorTotal)}</div>
+            </div>
+        `;
+    }).join("");
+
+    const { icon: iconPag, bg: bgPag, color: corPag } = iconeParaTipo(mp.tipoPagamento);
+
+    Swal.fire({
+        heightAuto: false,
+        customClass: { popup: "swal-resumo-popup" },
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        didClose: () => processarProximoPopupDaFila(), // libera o próximo da fila, se tiver
+        html: `
+            <div class="swal-resumo-wrap">
+
+                <div class="swal-resumo-header">
+                    <h2>🛎️ Novo Pedido!</h2>
+                    <p class="swal-resumo-subtitle">Recebido às ${venda.hora}</p>
+                </div>
+
+                <div class="swal-resumo-section">
+                    <div class="swal-resumo-section-head">
+                        <span>Cliente</span>
+                        <div class="swal-resumo-section-line"></div>
+                    </div>
+                    <div class="swal-resumo-info-grid">
+                        <div class="swal-resumo-info-item">
+                            <label>Nome</label>
+                            <span>${venda.cliente}</span>
+                        </div>
+                        <div class="swal-resumo-info-item">
+                            <label>Telefone</label>
+                            <span>${cliente.telefone || "-"}</span>
+                        </div>
+                        <div class="swal-resumo-info-item" style="grid-column: span 2">
+                            <label>Endereço</label>
+                            <span>${cliente.endereco || "-"}${cliente.referencia ? " (" + cliente.referencia + ")" : ""}</span>
+                        </div>
+                        ${cliente.observacoes ? `
+                        <div class="swal-resumo-info-item" style="grid-column: span 2">
+                            <label>Observações</label>
+                            <span>${cliente.observacoes}</span>
+                        </div>` : ""}
+                    </div>
+                </div>
+
+                <div class="swal-resumo-section">
+                    <div class="swal-resumo-section-head">
+                        <span>Itens do Pedido</span>
+                        <div class="swal-resumo-section-line"></div>
+                    </div>
+                    ${linhasProdutos}
+                </div>
+
+                <div class="swal-resumo-section">
+                    <div class="swal-resumo-section-head">
+                        <span>Pagamento</span>
+                        <div class="swal-resumo-section-line"></div>
+                    </div>
+                    <div class="swal-resumo-pagamento-row">
+                        <div class="swal-resumo-pagamento-left">
+                            <div class="swal-resumo-pagamento-icon" style="background:${bgPag}; color:${corPag}">
+                                <i class="fa-solid ${iconPag}"></i>
+                            </div>
+                            <div class="swal-resumo-pagamento-tipo">${mp.tipoPagamento || "-"}</div>
+                        </div>
+                        ${mp.trocoPara ? `<div class="swal-resumo-pagamento-qtd">Troco p/ ${formatarReais(mp.trocoPara)}</div>` : ""}
+                    </div>
+                    <div class="swal-resumo-total-row">
+                        <span class="swal-resumo-total-label">Total do Pedido</span>
+                        <div class="swal-resumo-total-valor">${formatarReais(venda.totalVenda)}</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="swal-resumo-footer">
+                <button class="swal-resumo-btn swal-resumo-btn-close" onclick="Swal.close()">
+                    <i class="fa-solid fa-xmark"></i> Fechar
+                </button>
+                <button class="swal-resumo-btn swal-resumo-btn-confirm" onclick="confirmarPedidoDelivery('${idDoc}')">
+                    <i class="fa-solid fa-check"></i> Confirmar Pedido
+                </button>
+            </div>
+        `,
+    });
+}
+
+/**
+ * Botão "Confirmar Pedido" do popup — vira o status inicial
+ * (CONFIRMADO) e grava o horário da confirmação (vai alimentar o
+ * timer quando o Kanban existir). Já dispara a primeira impressão do
+ * cupom, reaproveitando imprimirConteudoPedido80mm() do pdv.js.
+ */
+async function confirmarPedidoDelivery(idDoc) {
+    const pedido = _pedidosDeliveryPendentes.get(idDoc);
+    if (!pedido) return;
+
+    try {
+        await firebase.firestore().collection("pedidosDelivery").doc(idDoc).update({
+            status:       "CONFIRMADO",
+            confirmadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+    } catch (erro) {
+        console.error("[Mestre Maro] Erro ao confirmar pedido:", erro);
+    }
+
+    imprimirCupomDelivery(pedido);
+
+    _pedidosDeliveryPendentes.delete(idDoc);
+    Swal.close();
+}
+
+// ─────────────────────────────────────────────────────
+//  IMPRIME O CUPOM — reaproveita imprimirConteudoPedido80mm(),
+//  já definida em pdv.js, em vez de duplicar HTML/CSS aqui.
+//  Ajeitar o visual (logo, rodapé, peso da fonte) lá conserta
+//  os dois de uma vez: pedido por telefone/balcão E delivery.
+// ─────────────────────────────────────────────────────
+function imprimirCupomDelivery(pedido) {
+    const cliente = pedido.clienteDetalhes || {};
+    const mp      = pedido.meiosPagamento?.[0] || {};
+
+    // separa a "Taxa de Entrega" do resto dos produtos, pra bater
+    // com o formato Total pedido / Entrega / Total final que a
+    // função já usa
+    const itensProduto = pedido.produtos.filter((p) => p.id !== "taxa-entrega");
+    const itemEntrega   = pedido.produtos.find((p) => p.id === "taxa-entrega");
+    const subtotal       = itensProduto.reduce((acc, p) => acc + Number(p.valorTotal || 0), 0);
+    const valorEntrega   = Number(itemEntrega?.valorTotal || 0);
+
+    imprimirConteudoPedido80mm({
+        titulo:          "PEDIDO DELIVERY",
+        nomeCliente:     pedido.cliente,
+        telefone:        cliente.telefone,
+        endereco:        cliente.endereco + (cliente.referencia ? ` (${cliente.referencia})` : ""),
+        numero:          "",
+        produtos:        itensProduto,
+        observacoes:     cliente.observacoes,
+        total:           subtotal,
+        valorEntrega:    valorEntrega,
+        acrescimoCartao: Number(mp.taxa || 0),
+        formaPagamento:  mp.tipoPagamento,
+        trocoPara:       mp.trocoPara,
+    });
+}
+
+
 verificarIdLoja()
 ultimasVendas()
 calcularMetas()
@@ -2395,3 +2791,4 @@ calcularValorTotal()
 itensQuantidades()
 reloadVisaoGeral()
 mostrarCashbackDisponivel()
+aguardarLojaEIniciarImpressaoDelivery()

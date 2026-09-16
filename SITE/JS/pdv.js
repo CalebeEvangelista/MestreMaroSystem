@@ -510,16 +510,19 @@ async function imprimirPedido() {
 }
 
 function imprimirConteudoPedido80mm({
+    titulo = "PEDIDO",
     nomeCliente,
+    telefone,
     endereco,
     numero,
     produtos,
     observacoes,
     total,
-    valorEntrega
+    valorEntrega,
+    acrescimoCartao,   // opcional — só o delivery usa isso (cartão na entrega)
+    formaPagamento,    // opcional — só o delivery usa isso
+    trocoPara          // opcional — só dinheiro com troco usa isso
 }) {
-    const logoPath = "/IMAGENS/LOGOPRETOMONOCROMATICO.png";
-
     const janela = window.open("", "_blank", "width=420,height=800");
 
     const linhasProdutos = produtos.map(produto => `
@@ -532,36 +535,37 @@ function imprimirConteudoPedido80mm({
         </tr>
     `).join("");
 
-    const totalFinal = Number(total || 0) + Number(valorEntrega || 0);
+    const totalFinal = Number(total || 0) + Number(valorEntrega || 0) + Number(acrescimoCartao || 0);
 
     janela.document.write(`
     <html>
     <head>
         <style>
             @page { size: 80mm auto; margin: 0; }
-            body { width:80mm; font-family:Arial,sans-serif; margin:0; padding:4mm; color:#000; font-size:12px; }
-            .logo { text-align:center; margin-bottom:6px; }
-            .logo img { max-width:60mm; max-height:45px; }
-            .titulo { text-align:center; font-weight:bold; font-size:16px; margin-bottom:8px; }
-            .linha { border-top:1px dashed #000; margin:8px 0; }
-            .cliente { margin-bottom:8px; font-size:12px; line-height:1.5; word-break:break-word; }
-            table { width:100%; border-collapse:collapse; font-size:12px; }
-            th { border-bottom:1px solid #000; padding-bottom:4px; text-align:left; }
+            body { width:80mm; font-family:Arial,sans-serif; margin:0; padding:4mm; color:#000; font-size:13px; font-weight:600; }
+            .titulo { text-align:center; font-weight:800; font-size:17px; margin-bottom:8px; }
+            .linha { border-top:1.5px dashed #000; margin:8px 0; }
+            .cliente { margin-bottom:8px; font-size:13px; line-height:1.5; word-break:break-word; }
+            table { width:100%; border-collapse:collapse; font-size:13px; }
+            th { border-bottom:1.5px solid #000; padding-bottom:4px; text-align:left; font-weight:800; }
             td { padding:4px 0; }
-            .obs { margin-top:8px; font-size:12px; }
-            .obs-box { border-top:1px dashed #000; border-bottom:1px dashed #000; padding:6px 0; margin:6px 0; white-space:pre-line; word-break:break-word; }
-            .totais { margin-top:8px; font-size:13px; font-weight:bold; }
+            .obs { margin-top:8px; font-size:13px; }
+            .obs-box { border-top:1.5px dashed #000; border-bottom:1.5px dashed #000; padding:6px 0; margin:6px 0; white-space:pre-line; word-break:break-word; }
+            .pagamento { margin-top:8px; font-size:13px; }
+            .totais { margin-top:8px; font-size:14px; font-weight:800; }
             .totais div { display:flex; justify-content:space-between; margin-top:4px; }
-            .rodape { text-align:center; margin-top:10px; font-size:11px; }
+            .totais .destaque { font-size:16px; }
+            .rodape { text-align:center; margin-top:10px; font-size:12px; font-weight:700; }
         </style>
     </head>
     <body>
-        <div class="logo"><img src="${logoPath}"></div>
+        <div class="titulo">${titulo}</div>
         <div class="linha"></div>
         <div class="cliente">
             <div><strong>Cliente:</strong> ${nomeCliente || "Sem Nome"}</div>
+            ${telefone ? `<div><strong>Telefone:</strong> ${telefone}</div>` : ""}
             ${endereco
-                ? `<div><strong>Endereço:</strong> ${endereco}, ${numero}</div>`
+                ? `<div><strong>Endereço:</strong> ${endereco}${numero ? ", " + numero : ""}</div>`
                 : `<div><strong>Tipo:</strong> Balcão / Retirada</div>`
             }
         </div>
@@ -582,13 +586,18 @@ function imprimirConteudoPedido80mm({
             <strong>Observações</strong>
             <div class="obs-box">${observacoes || "Sem observações"}</div>
         </div>
+        ${formaPagamento ? `
+        <div class="pagamento">
+            <strong>Pagamento:</strong> ${formaPagamento}${trocoPara ? ` — Troco p/ R$ ${Number(trocoPara).toFixed(2).replace(".", ",")}` : ""}
+        </div>` : ""}
         <div class="totais">
             <div><span>Total pedido</span><span>R$ ${Number(total || 0).toFixed(2).replace(".", ",")}</span></div>
             <div><span>Entrega</span><span>R$ ${Number(valorEntrega || 0).toFixed(2).replace(".", ",")}</span></div>
-            <div><span>Total final</span><span>R$ ${totalFinal.toFixed(2).replace(".", ",")}</span></div>
+            ${acrescimoCartao > 0 ? `<div><span>Acréscimo Cartão</span><span>R$ ${Number(acrescimoCartao).toFixed(2).replace(".", ",")}</span></div>` : ""}
+            <div class="destaque"><span>Total final</span><span>R$ ${totalFinal.toFixed(2).replace(".", ",")}</span></div>
         </div>
         <div class="linha"></div>
-        <div class="rodape">Obrigado pela preferência, fique atento nas novidades @EsquentaDoPovo</div>
+        <div class="rodape">Obrigado pelo pedido</div>
         <script>
             window.onload = function(){ window.print(); window.close(); }
         <\/script>
